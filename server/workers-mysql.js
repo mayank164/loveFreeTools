@@ -680,6 +680,83 @@ function getApiDocumentationHTML(origin) {
       a:hover {
           text-decoration: underline;
       }
+      .btn-primary {
+          display: inline-block;
+          padding: 10px 24px;
+          background: var(--primary);
+          color: var(--bg-dark);
+          border-radius: 8px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.3s ease;
+      }
+      .btn-primary:hover {
+          background: var(--primary-dim);
+          text-decoration: none;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px var(--primary-glow);
+      }
+      .btn-secondary {
+          display: inline-block;
+          padding: 10px 24px;
+          background: transparent;
+          color: var(--primary);
+          border: 1px solid var(--primary);
+          border-radius: 8px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.3s ease;
+      }
+      .btn-secondary:hover {
+          background: rgba(0, 245, 212, 0.1);
+          text-decoration: none;
+          transform: translateY(-2px);
+      }
+      .status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: rgba(16, 185, 129, 0.15);
+          border: 1px solid var(--success);
+          border-radius: 20px;
+          font-size: 13px;
+          color: var(--success);
+      }
+      .status-badge::before {
+          content: '';
+          width: 8px;
+          height: 8px;
+          background: var(--success);
+          border-radius: 50%;
+          animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+      }
+      .feature-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 20px;
+          margin-top: 20px;
+      }
+      .feature-item {
+          padding: 20px;
+          background: var(--bg-elevated);
+          border-radius: 8px;
+          border-left: 3px solid var(--primary);
+      }
+      .feature-item h4 {
+          color: var(--primary);
+          margin-bottom: 8px;
+          font-size: 16px;
+      }
+      .feature-item p {
+          color: var(--text-secondary);
+          font-size: 14px;
+          line-height: 1.6;
+      }
   </style>
 </head>
 <body>
@@ -690,23 +767,48 @@ function getApiDocumentationHTML(origin) {
           <div class="subtitle" style="font-size: 14px; margin-top: 5px; color: var(--text-muted);">
               当前域名: <span class="highlight">${origin}</span>
           </div>
+          <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+              <a href="https://free.violetteam.cloud" class="btn-primary">前往主页</a>
+              <a href="https://github.com/violettoolssite/loveFreeTools" target="_blank" class="btn-secondary">GitHub 源码</a>
+          </div>
       </div>
 
       <div class="card">
           <div class="card-title">服务简介</div>
+          <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+              <span class="status-badge">服务运行中</span>
+              <span style="color: var(--text-muted); font-size: 13px;">Cloudflare Workers 全球边缘部署</span>
+          </div>
           <p style="color: var(--text-secondary); line-height: 1.8;">
               公益平台是一个完全免费的公益服务项目，致力于为开发者提供便捷的工具和服务。
-              我们提供临时邮箱、GitHub 代理、文件加速下载等多项免费服务，所有服务均通过 Cloudflare Workers 部署，
-              支持高并发、低延迟访问。邮件数据会在 24 小时后自动删除，确保隐私安全。
+              我们提供临时邮箱、短链接服务、GitHub 代理、文件加速下载、AI 智能分析等多项免费服务。
+              所有服务均通过 Cloudflare Workers 部署，支持高并发、低延迟访问。邮件数据会在 24 小时后自动删除，确保隐私安全。
           </p>
-          <div style="margin-top: 20px; padding: 20px; background: var(--bg-elevated); border-radius: 8px; border-left: 4px solid var(--primary);">
-              <p style="color: var(--text-primary); font-weight: 600; margin-bottom: 10px;">平台特色</p>
-              <ul style="color: var(--text-secondary); padding-left: 20px; line-height: 2;">
-                  <li>完全免费，无需注册</li>
-                  <li>高可用性，全球 CDN 加速</li>
-                  <li>隐私保护，数据自动清理</li>
-                  <li>开源透明，代码公开可查</li>
-              </ul>
+          <div class="feature-grid">
+              <div class="feature-item">
+                  <h4>临时邮箱</h4>
+                  <p>免费接收邮件，支持多域名，24 小时自动清理，保护隐私</p>
+              </div>
+              <div class="feature-item">
+                  <h4>短链接服务</h4>
+                  <p>长链接转短链，支持自定义短码，访问统计，可设过期时间</p>
+              </div>
+              <div class="feature-item">
+                  <h4>GitHub 加速</h4>
+                  <p>代理 GitHub 访问，支持 git clone、文件下载等操作</p>
+              </div>
+              <div class="feature-item">
+                  <h4>文件加速</h4>
+                  <p>加速下载任意 HTTPS 文件，无大小限制，支持断点续传</p>
+              </div>
+              <div class="feature-item">
+                  <h4>AI 智能分析</h4>
+                  <p>邮件摘要生成、验证码提取、垃圾检测、多语言翻译</p>
+              </div>
+              <div class="feature-item">
+                  <h4>开源透明</h4>
+                  <p>代码完全开源，欢迎贡献和自部署</p>
+              </div>
           </div>
       </div>
 
@@ -1145,7 +1247,13 @@ Body: {
       <div class="footer">
           <p>Powered by <span class="highlight">VioletTeam</span></p>
           <p style="margin-top: 10px; font-size: 14px;">公益平台 - 免费公益服务 | 让开发更简单</p>
-          <p style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+          <div style="margin-top: 15px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+              <a href="https://free.violetteam.cloud" style="color: var(--text-secondary);">主页</a>
+              <a href="https://free.violetteam.cloud/terms.html" style="color: var(--text-secondary);">服务条款</a>
+              <a href="https://github.com/violettoolssite/loveFreeTools" target="_blank" style="color: var(--text-secondary);">GitHub</a>
+              <a href="mailto:chf@yljdteam.com" style="color: var(--text-secondary);">联系我们</a>
+          </div>
+          <p style="margin-top: 15px; font-size: 12px; color: var(--text-muted);">
               本平台所有服务完全免费，欢迎使用和反馈
           </p>
       </div>
