@@ -1121,21 +1121,32 @@ Access-Control-Allow-Headers: Content-Type, X-Admin-Key</code>
       <div class="card">
           <div class="card-title">AI 智能分析 <span class="badge">Cloudflare Workers AI</span></div>
           <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.8;">
-              使用 Cloudflare Workers AI 提供智能文本分析功能，包括翻译、摘要、验证码提取和安全检测。
+              基于 Cloudflare Workers AI（Meta Llama 3 8B 模型）提供智能文本分析功能。
+              邮件接收时自动进行 AI 分析，也可通过 API 手动调用。
           </p>
           
           <div class="endpoint">
               <span class="endpoint-method method-post">POST</span>
               <span class="endpoint-path">/api/ai/translate</span>
               <div class="endpoint-desc">
-                  翻译文本内容
+                  翻译文本内容，支持多语言互译
+                  <div class="example">
+                      <div class="example-title">请求参数</div>
+                      <code>{
+  "text": "要翻译的文本内容",
+  "targetLang": "目标语言代码"
+}
+
+支持的语言代码：
+  zh - 中文    en - 英文    ja - 日文
+  ko - 韩文    fr - 法文    de - 德文
+  es - 西班牙文    ru - 俄文</code>
+                  </div>
                   <div class="example">
                       <div class="example-title">请求示例</div>
-                      <code>POST ${origin}/api/ai/translate
-Body: {
-  "text": "Hello, World!",
-  "targetLang": "zh"
-}</code>
+                      <code>curl -X POST ${origin}/api/ai/translate \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "Hello, World!", "targetLang": "zh"}'</code>
                   </div>
                   <div class="example">
                       <div class="example-title">响应格式</div>
@@ -1152,13 +1163,25 @@ Body: {
               <span class="endpoint-method method-post">POST</span>
               <span class="endpoint-path">/api/ai/summarize</span>
               <div class="endpoint-desc">
-                  生成文本摘要
+                  生成文本摘要，返回中英双语摘要
+                  <div class="example">
+                      <div class="example-title">请求参数</div>
+                      <code>{
+  "text": "邮件或文章正文内容",
+  "subject": "标题（可选，用于辅助理解）"
+}</code>
+                  </div>
                   <div class="example">
                       <div class="example-title">请求示例</div>
-                      <code>POST ${origin}/api/ai/summarize
-Body: {
-  "text": "邮件正文内容...",
-  "subject": "邮件主题"
+                      <code>curl -X POST ${origin}/api/ai/summarize \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "您的订单已发货...", "subject": "订单通知"}'</code>
+                  </div>
+                  <div class="example">
+                      <div class="example-title">响应格式</div>
+                      <code>{
+  "success": true,
+  "summary": "订单已发货，预计3天送达 | Order shipped, expected in 3 days"
 }</code>
                   </div>
               </div>
@@ -1168,13 +1191,31 @@ Body: {
               <span class="endpoint-method method-post">POST</span>
               <span class="endpoint-path">/api/ai/extract-code</span>
               <div class="endpoint-desc">
-                  从文本中智能提取验证码
+                  从文本中智能提取验证码（4-8位数字或字母组合）
+                  <div class="example">
+                      <div class="example-title">请求参数</div>
+                      <code>{
+  "text": "邮件正文内容",
+  "subject": "邮件主题（可选）"
+}</code>
+                  </div>
                   <div class="example">
                       <div class="example-title">请求示例</div>
-                      <code>POST ${origin}/api/ai/extract-code
-Body: {
-  "text": "您的验证码是 123456",
-  "subject": "验证邮件"
+                      <code>curl -X POST ${origin}/api/ai/extract-code \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "您的验证码是 123456，10分钟内有效", "subject": "验证邮件"}'</code>
+                  </div>
+                  <div class="example">
+                      <div class="example-title">响应格式</div>
+                      <code>{
+  "success": true,
+  "code": "123456"
+}
+
+// 如果未找到验证码
+{
+  "success": true,
+  "code": null
 }</code>
                   </div>
               </div>
@@ -1184,20 +1225,33 @@ Body: {
               <span class="endpoint-method method-post">POST</span>
               <span class="endpoint-path">/api/ai/check-url</span>
               <div class="endpoint-desc">
-                  检测 URL 安全性
+                  检测 URL 安全性，识别钓鱼、恶意链接
                   <div class="example">
-                      <div class="example-title">请求示例</div>
-                      <code>POST ${origin}/api/ai/check-url
-Body: {
-  "url": "https://example.com"
+                      <div class="example-title">请求参数</div>
+                      <code>{
+  "url": "要检测的 URL 地址"
 }</code>
                   </div>
                   <div class="example">
+                      <div class="example-title">请求示例</div>
+                      <code>curl -X POST ${origin}/api/ai/check-url \\
+  -H "Content-Type: application/json" \\
+  -d '{"url": "https://example.com/login"}'</code>
+                  </div>
+                  <div class="example">
                       <div class="example-title">响应格式</div>
-                      <code>{
+                      <code>// 安全链接
+{
   "success": true,
   "safe": true,
   "reason": "未发现可疑特征"
+}
+
+// 可疑链接
+{
+  "success": true,
+  "safe": false,
+  "reason": "域名与知名网站相似，可能是钓鱼网站"
 }</code>
                   </div>
               </div>
@@ -1208,17 +1262,57 @@ Body: {
               <span class="endpoint-path">/api/links/:code/safety</span>
               <div class="endpoint-desc">
                   检测短链接目标 URL 的安全性
+                  <div class="example">
+                      <div class="example-title">请求示例</div>
+                      <code>curl ${origin}/api/links/abc123/safety</code>
+                  </div>
+                  <div class="example">
+                      <div class="example-title">响应格式</div>
+                      <code>{
+  "success": true,
+  "code": "abc123",
+  "originalUrl": "https://example.com",
+  "safe": true,
+  "reason": "未发现可疑特征"
+}</code>
+                  </div>
               </div>
           </div>
 
-          <div style="margin-top: 15px; padding: 15px; background: var(--bg-elevated); border-radius: 6px; border-left: 3px solid var(--secondary);">
-              <strong style="color: var(--secondary);">AI 功能说明：</strong>
-              <ul style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary);">
-                  <li>使用 Meta Llama 3 8B 模型</li>
-                  <li>自动分析收到的邮件（验证码、摘要、垃圾检测）</li>
-                  <li>支持中英日韩等多语言翻译</li>
-                  <li>每日 10,000 神经元免费额度</li>
-              </ul>
+          <div style="margin-top: 20px; padding: 20px; background: var(--bg-elevated); border-radius: 8px; border-left: 3px solid var(--secondary);">
+              <strong style="color: var(--secondary);">AI 功能说明</strong>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                  <div>
+                      <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 5px;">模型</p>
+                      <p style="color: var(--text-secondary); font-size: 14px;">Meta Llama 3 8B Instruct</p>
+                  </div>
+                  <div>
+                      <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 5px;">自动分析</p>
+                      <p style="color: var(--text-secondary); font-size: 14px;">收到邮件时自动提取验证码、生成摘要、检测垃圾邮件</p>
+                  </div>
+                  <div>
+                      <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 5px;">多语言支持</p>
+                      <p style="color: var(--text-secondary); font-size: 14px;">中、英、日、韩、法、德、西、俄</p>
+                  </div>
+                  <div>
+                      <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 5px;">备用服务</p>
+                      <p style="color: var(--text-secondary); font-size: 14px;">Workers AI 不可用时自动切换 ModelScope</p>
+                  </div>
+              </div>
+          </div>
+
+          <div style="margin-top: 15px; padding: 15px; background: var(--bg-elevated); border-radius: 6px; border-left: 3px solid var(--warning);">
+              <strong style="color: var(--warning);">错误响应</strong>
+              <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+                  <code>// 参数缺失
+{ "success": false, "error": "缺少 text 参数" }
+
+// AI 服务不可用
+{ "success": false, "error": "AI 服务不可用" }
+
+// 服务器错误
+{ "success": false, "error": "错误信息" }</code>
+              </div>
           </div>
       </div>
 
