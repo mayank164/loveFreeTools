@@ -2,11 +2,47 @@
 
 一个基于 Cloudflare Workers 和 Node.js 的免费公益服务平台，提供临时邮箱、短链接生成、GitHub 代理、文件加速下载等功能，集成 AI 智能分析能力。
 
+## 在线演示
+
+### 服务入口
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 前端主页 | https://free.violetteam.cloud | 临时邮箱服务主页面 |
+| 文件加速 | https://download.qxfy.store/proxy/?url={URL} | 文件下载加速 |
+
+### 多域名支持
+
+本平台支持多个域名，每个域名都提供完整的服务功能。你可以使用任意域名进行以下操作：
+
+| 功能 | 使用方式 | 示例 |
+|------|----------|------|
+| 临时邮箱 | 在前端选择域名生成邮箱 | user@{domain} |
+| API 文档 | 访问域名根路径 | https://{domain}/ |
+| GitHub 代理 | 域名后接仓库路径 | https://{domain}/{user}/{repo} |
+| 文件加速 | 使用 proxy 路径 | https://{domain}/proxy/?url={URL} |
+| 短链接 | 使用 /s/ 路径 | https://{domain}/s/{code} |
+
+当前可用域名：
+
+| 域名 | 状态 |
+|------|------|
+| logincursor.xyz | 可用 |
+| kami666.xyz | 可用 |
+| deploytools.site | 可用 |
+| loginvipcursor.icu | 可用 |
+| qxfy.store | 可用 |
+| violetteam.cloud | 可用 |
+
+所有域名共享同一后端数据库，邮件和短链接数据在所有域名间互通。
+
 ## 目录
 
+- [在线演示](#在线演示)
 - [功能特性](#功能特性)
 - [系统架构](#系统架构)
 - [部署指南](#部署指南)
+- [Cloudflare Git 同步部署](#cloudflare-git-同步部署)
 - [API 文档](#api-文档)
 - [配置说明](#配置说明)
 - [文件结构](#文件结构)
@@ -215,6 +251,136 @@ server {
 - favicon.svg
 - privacy.html
 - terms.html
+
+## Cloudflare Git 同步部署
+
+通过将 Cloudflare Worker 连接到 Git 仓库，可以实现代码推送后自动构建和部署，无需手动复制粘贴代码。
+
+### 前置要求
+
+- GitHub 仓库（本项目已托管在 https://github.com/violettoolssite/loveFreeTools）
+- Cloudflare 账户
+- 已有的 Worker（或新建一个）
+
+### 步骤 1：进入 Worker 设置
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 进入 **Workers & Pages**
+3. 点击你的 Worker（如 `login`）
+4. 进入 **Settings** 选项卡
+5. 找到 **Build** 部分，点击 **Connect to Git**
+
+### 步骤 2：连接 Git 仓库
+
+1. 选择 **GitHub** 作为 Git 提供商
+2. 点击 **Connect GitHub**，授权 Cloudflare 访问你的 GitHub 账户
+3. 选择仓库：`violettoolssite/loveFreeTools`
+4. 点击 **Begin Setup**
+
+### 步骤 3：配置构建设置
+
+在构建配置页面，设置以下参数：
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 构建命令 | 留空 | 本项目无需构建步骤 |
+| 部署命令 | `npx wrangler deploy` | 使用 Wrangler CLI 部署 |
+| 版本命令 | `npx wrangler versions upload` | 上传版本信息 |
+| 根目录 | `/` | 项目根目录 |
+| 生产分支 | `main` | 主分支 |
+| 非生产分支构建 | 已启用 | 其他分支也会触发构建 |
+
+### 步骤 4：配置构建监视路径
+
+设置哪些文件变更会触发重新构建：
+
+- **包括路径**: `*`（监视所有文件）
+- 或者只监视 Worker 相关文件：`server/workers-mysql.js`, `wrangler.toml`
+
+### 步骤 5：配置 API 令牌
+
+Cloudflare 会自动创建一个 API 令牌用于部署：
+
+- **令牌名称**: 自动生成（如 `loveFreeTools build token`）
+- 该令牌具有部署 Worker 所需的最小权限
+
+### 步骤 6：保存并测试
+
+1. 点击 **Save and Deploy**
+2. Cloudflare 会立即触发第一次构建
+3. 查看构建日志确认部署成功
+
+### 验证部署
+
+构建完成后，检查以下内容：
+
+1. **Worker 代码**：进入 Worker 编辑器，确认代码已更新
+2. **环境变量**：确保 `API_BASE`、`ADMIN_KEY` 等变量已配置
+3. **AI 绑定**：确保 `AI` 绑定已添加
+4. **功能测试**：访问 Worker 域名，测试 API 是否正常
+
+### wrangler.toml 配置说明
+
+项目根目录的 `wrangler.toml` 文件定义了 Worker 配置：
+
+```toml
+name = "login"                    # Worker 名称
+main = "server/workers-mysql.js"  # 入口文件路径
+compatibility_date = "2024-01-01" # 兼容性日期
+```
+
+重要说明：
+- `name` 必须与 Cloudflare Dashboard 中的 Worker 名称一致
+- `main` 指向 Worker 入口文件
+- 环境变量和绑定需要在 Dashboard 中配置，不在此文件中设置
+
+### 后续更新流程
+
+配置完成后，每次推送代码到 GitHub 会自动触发部署：
+
+```bash
+# 修改代码后
+git add .
+git commit -m "Update feature"
+git push origin main
+
+# Cloudflare 会自动：
+# 1. 检测到新提交
+# 2. 执行 npx wrangler deploy
+# 3. 部署新版本到 Worker
+```
+
+### 查看构建历史
+
+1. 进入 Worker -> Settings -> Build
+2. 点击 **View build history**
+3. 可以查看每次构建的日志、状态和持续时间
+
+### 回滚版本
+
+如果新版本有问题，可以快速回滚：
+
+1. 进入 Worker -> Deployments
+2. 找到之前的正常版本
+3. 点击 **Rollback to this version**
+
+### 常见问题
+
+**Q: 构建失败，提示找不到 wrangler**
+
+A: 确保项目根目录有 `wrangler.toml` 文件，Cloudflare 会自动安装 wrangler。
+
+**Q: 部署成功但功能不正常**
+
+A: 检查环境变量是否配置正确，特别是 `API_BASE` 和 `ADMIN_KEY`。
+
+**Q: 如何暂停自动部署**
+
+A: 进入 Worker -> Settings -> Build，点击 **Pause builds**。
+
+**Q: 如何断开 Git 连接**
+
+A: 进入 Worker -> Settings -> Build，点击 **Disconnect from Git**。
 
 ## API 文档
 

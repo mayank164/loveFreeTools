@@ -1354,8 +1354,9 @@ const App = {
         this.showToast('info', '翻译中', '正在使用 AI 翻译...');
         
         try {
-            // AI API 在 Worker 中实现，使用 Worker 域名（kami666.xyz）
-            const aiApiBase = 'https://kami666.xyz';
+            // AI API 在 Worker 中实现，使用当前域名的 Worker
+            const currentDomain = EmailAPI.getCurrentDomain();
+            const aiApiBase = currentDomain.api || `https://${currentDomain.name}`;
             const response = await fetch(`${aiApiBase}/api/ai/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2368,7 +2369,7 @@ sudo systemctl restart docker`;
                 });
             } else {
                 // 如果没有域名，添加当前域名
-                const currentDomain = window.location.hostname || 'kami666.xyz';
+                const currentDomain = window.location.hostname || 'example.com';
                 const option = document.createElement('option');
                 option.value = currentDomain;
                 option.textContent = currentDomain;
