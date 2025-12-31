@@ -1338,6 +1338,28 @@ const App = {
     },
     
     /**
+     * 获取 AI API 基础地址
+     * 优先使用已知配置了 AI 绑定的域名
+     */
+    getAIApiBase() {
+        // 已知配置了 AI 绑定的主域名列表
+        const aiEnabledDomains = [
+            'kami666.xyz',
+            'qxfy.store',
+            'logincursor.xyz'
+        ];
+        
+        // 检查当前域名是否支持 AI
+        const currentDomain = EmailAPI.getCurrentDomain();
+        if (currentDomain && aiEnabledDomains.includes(currentDomain.name)) {
+            return `https://${currentDomain.name}`;
+        }
+        
+        // 使用第一个已知支持 AI 的域名
+        return `https://${aiEnabledDomains[0]}`;
+    },
+    
+    /**
      * 翻译邮件内容
      */
     async translateEmail(targetLang = 'zh') {
@@ -1354,9 +1376,9 @@ const App = {
         this.showToast('info', '翻译中', '正在使用 AI 翻译...');
         
         try {
-            // AI API 在 Worker 中实现，使用当前域名的 Worker
-            const currentDomain = EmailAPI.getCurrentDomain();
-            const aiApiBase = currentDomain.api || `https://${currentDomain.name}`;
+            // AI API 需要使用配置了 AI 绑定的 Worker 域名
+            // 优先使用当前域名，如果失败则回退到主域名
+            const aiApiBase = this.getAIApiBase();
             const response = await fetch(`${aiApiBase}/api/ai/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
