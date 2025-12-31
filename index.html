@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>∞ 公益平台 - 免费公益服务</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Highlight.js 代码高亮（延迟加载） -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部状态栏 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">∞</span>
+                <span class="logo-text">公益平台</span>
+            </div>
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <span class="pulse"></span>
+                    <span class="status-text">在线</span>
+                </div>
+                <div class="email-count">
+                    <span id="emailCount">0</span> 封邮件
+                </div>
+                <div class="refresh-status">
+                    <span id="refreshStatus">自动刷新中...</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 左侧面板 - 邮箱控制 -->
+            <aside class="sidebar sidebar-left">
+                <div class="panel email-panel">
+                    <h2 class="panel-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        当前邮箱
+                    </h2>
+                    
+                    <div class="current-email">
+                        <div class="email-display" id="currentEmail">
+                            <span class="email-prefix">loading</span>
+                            <span class="email-at">@</span>
+                            <span class="email-domain">domain.xyz</span>
+                        </div>
+                        <button class="btn btn-copy" id="copyEmailBtn" title="复制邮箱地址">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                            <span>复制</span>
+                        </button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- 域名选择 -->
+                    <div class="domain-selector">
+                        <label class="label">选择域名</label>
+                        <div class="domain-grid" id="domainGrid">
+                            <!-- 域名按钮将由 JS 动态生成 -->
+                        </div>
+                        <div class="domain-actions">
+                            <button class="btn btn-sm btn-outline" id="addDomainOpenBtn" title="添加新域名">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                添加域名
+                            </button>
+                            <button class="btn btn-sm btn-outline" id="viewWorkerCodeBtn" title="查看 Worker 代码">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6"/>
+                                    <polyline points="8 6 2 12 8 18"/>
+                                </svg>
+                                Worker 代码
+                            </button>
+                        </div>
+                        <div class="domain-actions" style="margin-top: 8px;">
+                            <button class="btn btn-sm btn-primary" id="sendEmailOpenBtn" title="发送邮件">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                                发送邮件
+                            </button>
+                            <button class="btn btn-sm btn-outline" id="viewApiDocBtn" title="查看 API 文档">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                    <polyline points="10 9 9 9 8 9"/>
+                                </svg>
+                                API 文档
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- 邮箱前缀设置 -->
+                    <div class="prefix-setting">
+                        <label class="label">邮箱前缀</label>
+                        <div class="prefix-input-group">
+                            <input type="text" id="prefixInput" class="input" placeholder="自定义或留空随机">
+                            <button class="btn btn-generate" id="generateBtn">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                </svg>
+                                生成新邮箱
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- 自动刷新设置 -->
+                    <div class="refresh-setting">
+                        <label class="label">自动刷新</label>
+                        <div class="toggle-group">
+                            <label class="toggle">
+                                <input type="checkbox" id="autoRefreshToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">每 5 秒</span>
+                        </div>
+                        <button class="btn btn-secondary btn-refresh" id="manualRefreshBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            立即刷新
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 右侧区域 - 邮件列表和详情 -->
+            <div class="content-area">
+                <!-- 邮件列表 -->
+                <div class="panel mail-list-panel">
+                    <h2 class="panel-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
+                            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                        </svg>
+                        收件箱
+                        <span class="badge" id="inboxBadge">0</span>
+                    </h2>
+                    <div class="mail-list" id="mailList">
+                        <div class="empty-state">
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
+                                <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                            </svg>
+                            <p>收件箱为空</p>
+                            <span>等待接收邮件...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 发件箱 -->
+                <div class="panel mail-list-panel outbox-panel">
+                    <h2 class="panel-title outbox-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        发件箱
+                        <span class="outbox-email-selector" id="outboxEmailSelector" title="点击切换邮箱">
+                            <span class="outbox-current-email" id="outboxCurrentEmail">全部</span>
+                            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </span>
+                        <span class="badge" id="outboxBadge">0</span>
+                    </h2>
+                    <!-- 邮箱选择下拉菜单 -->
+                    <div class="outbox-dropdown" id="outboxDropdown">
+                        <div class="outbox-dropdown-item" data-email="all">全部邮箱</div>
+                    </div>
+                    <div class="mail-list" id="outboxList">
+                        <div class="empty-state">
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            <p>发件箱为空</p>
+                            <span>发送的邮件将显示在这里</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 右侧面板 - 历史和捐赠 -->
+            <aside class="sidebar sidebar-right">
+                <!-- GitHub 代理 -->
+                <div class="panel github-panel">
+                    <h2 class="panel-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                        </svg>
+                        GitHub 加速
+                    </h2>
+                    <p class="github-desc">
+                        所有域名均支持 GitHub 代理加速
+                    </p>
+                    <div class="github-usage">
+                        <code class="github-example">git clone https://<span class="domain-placeholder">域名</span>/<span class="repo-placeholder">user/repo</span></code>
+                    </div>
+                    <div class="github-actions">
+                    <button class="btn btn-sm btn-outline" id="showGitHubGuideBtn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polygon points="10 8 16 12 10 16 10 8"/>
+                        </svg>
+                            clone 代理
+                        </button>
+                        <button class="btn btn-sm btn-outline" id="showFileProxyBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            文件加速
+                    </button>
+                    </div>
+                </div>
+
+                <!-- Docker 加速 -->
+                <div class="panel docker-panel">
+                    <h2 class="panel-title">
+                        <svg class="icon docker-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186h-2.12a.186.186 0 00-.185.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z"/>
+                        </svg>
+                        Docker 加速
+                    </h2>
+                    <p class="github-desc">
+                        通过服务器反向代理加速 Docker Hub 镜像拉取
+                    </p>
+                    <div class="github-actions">
+                        <button class="btn btn-sm btn-outline docker-btn" id="showDockerBtn">
+                            <svg class="icon docker-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186h-2.12a.186.186 0 00-.185.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z"/>
+                            </svg>
+                            配置说明
+                    </button>
+                    </div>
+                </div>
+
+                <!-- 短链接服务 -->
+                <div class="panel shortlink-panel">
+                    <h2 class="panel-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        短链接
+                    </h2>
+                    <p class="github-desc">
+                        免费短链接生成，支持自定义短码和访问统计
+                    </p>
+                    <div class="github-actions">
+                        <button class="btn btn-sm btn-primary" id="showShortLinkBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            生成短链接
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 历史邮箱 -->
+                <div class="panel history-panel">
+                    <h2 class="panel-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        历史邮箱
+                    </h2>
+                    <div class="history-list" id="historyList">
+                        <div class="empty-state small">暂无记录</div>
+                    </div>
+                </div>
+
+                <!-- 使用说明 - 精简版 -->
+                <div class="panel safety-panel compact">
+                    <div class="safety-compact">
+                        <span class="safety-badge">邮件 24h 自动删除</span>
+                        <span class="safety-badge">GitHub 限 60次/分钟</span>
+                        <span class="safety-badge">Cloudflare Workers</span>
+                            </div>
+                        </div>
+            </aside>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="privacy.html" class="footer-link">隐私政策</a>
+                    <span class="footer-separator">|</span>
+                    <a href="terms.html" class="footer-link">服务条款</a>
+                            </div>
+                <div class="footer-copyright">
+                    <span>© 2025 公益平台 - 免费公益服务</span>
+                        </div>
+                            </div>
+        </footer>
+
+        <!-- 邮件详情模态框 -->
+        <div class="modal-overlay" id="mailModal">
+            <div class="modal" id="mailDetailPanel">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modalTitle">邮件详情</h3>
+                    <div class="modal-actions">
+                        <div class="view-toggle">
+                            <button class="btn btn-view active" id="viewTextBtn" data-view="text">纯文本</button>
+                            <button class="btn btn-view" id="viewHtmlBtn" data-view="html">HTML</button>
+                        </div>
+                        <button class="btn btn-close" id="closeModalBtn" title="关闭">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="mail-meta">
+                        <div class="meta-row">
+                            <span class="meta-label">发件人:</span>
+                            <span class="meta-value" id="detailFrom">-</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">收件人:</span>
+                            <span class="meta-value" id="detailTo">-</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">主题:</span>
+                            <span class="meta-value" id="detailSubject">-</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">时间:</span>
+                            <span class="meta-value" id="detailDate">-</span>
+                        </div>
+                    </div>
+                    <!-- AI 分析信息 -->
+                    <div class="ai-info" id="aiInfo" style="display: none;"></div>
+                    <!-- AI 操作按钮 -->
+                    <div class="ai-actions">
+                        <button class="btn btn-ai" id="translateBtn" title="AI 翻译">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 8l6 6"/>
+                                <path d="M4 14c1.5 0 5-2 5-6"/>
+                                <path d="M2 5h8"/>
+                                <path d="M6 3v4"/>
+                                <path d="M14 16l6-6"/>
+                                <path d="M20 10c-1.5 0-5 2-5 6"/>
+                                <path d="M14 19h8"/>
+                                <path d="M18 21v-4"/>
+                            </svg>
+                            翻译
+                        </button>
+                    </div>
+                    <div class="mail-body" id="mailBody">
+                        <div class="text-content" id="textContent"></div>
+                        <iframe class="html-content" id="htmlContent" sandbox="allow-same-origin"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 发送邮件模态框 -->
+        <div class="modal-overlay" id="sendEmailModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">发送邮件</h3>
+                    <button class="btn btn-close" id="closeSendEmailModalBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- 安全警告 -->
+                    <div class="security-warning">
+                        <div class="warning-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </div>
+                        <div class="warning-content">
+                            <strong>安全警告</strong>
+                            <p>本服务仅供正当用途，严禁发送垃圾邮件、钓鱼邮件或任何违法内容。</p>
+                            <ul>
+                                <li>所有发送记录均被审计，包括 IP 地址、设备信息</li>
+                                <li>滥用行为将导致域名被封禁并追究法律责任</li>
+                                <li>我们保留追踪溯源及采取法律行动的权利</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sendEmailFrom">发件人邮箱</label>
+                        <div class="sender-input-group">
+                            <input type="text" id="sendEmailPrefix" class="input sender-prefix" placeholder="用户名">
+                            <span class="sender-domain">@violetteam.cloud</span>
+                            <button type="button" class="btn btn-sm btn-outline" id="randomSenderBtn" title="随机生成">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <input type="hidden" id="sendEmailFrom">
+                    </div>
+                    <div class="form-group">
+                        <label for="sendEmailTo">收件人邮箱</label>
+                        <input type="email" id="sendEmailTo" class="input" placeholder="recipient@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sendEmailSubject">邮件主题</label>
+                        <input type="text" id="sendEmailSubject" class="input" placeholder="邮件主题" required>
+                    </div>
+                    <div class="form-group">
+                        <div class="content-type-toggle">
+                            <label>邮件内容</label>
+                            <div class="toggle-buttons">
+                                <button type="button" class="btn btn-toggle active" id="toggleTextBtn">纯文本</button>
+                                <button type="button" class="btn btn-toggle" id="toggleHtmlBtn">HTML</button>
+                            </div>
+                        </div>
+                        <textarea id="sendEmailText" class="input textarea" rows="10" placeholder="输入邮件内容..."></textarea>
+                        <textarea id="sendEmailHtml" class="input textarea" rows="10" placeholder="输入 HTML 内容..." style="display: none;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="sendEmailReplyTo">回复地址（可选）</label>
+                        <input type="email" id="sendEmailReplyTo" class="input" placeholder="reply@domain.com">
+                        <small class="form-hint">如果不填写，将使用发件人地址</small>
+                    </div>
+                    <div class="form-actions send-email-actions">
+                        <button class="btn btn-primary" id="submitSendEmailBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            <span class="btn-text">发送</span>
+                            <span class="btn-loading" style="display: none;">发送中...</span>
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="cancelSendEmailBtn">取消</button>
+                    </div>
+                    <div class="send-email-status" id="sendEmailStatus"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通知提示 -->
+        <div class="toast-container" id="toastContainer"></div>
+
+        <!-- 右键菜单 -->
+        <div class="context-menu" id="contextMenu" style="display: none;">
+            <div class="context-menu-item" id="contextMenuDelete">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                <span>删除邮件</span>
+            </div>
+        </div>
+
+        <!-- 添加域名模态框 -->
+        <div class="modal-overlay" id="addDomainModal">
+            <div class="modal add-domain-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        添加新域名
+                    </h3>
+                    <button class="btn btn-close" id="closeAddDomainBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="add-domain-info">
+                        <p class="info-text info-features">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                            添加的域名将同时支持 <strong>临时邮箱</strong> 和 <strong>GitHub 加速</strong> 两种功能
+                        </p>
+                        <p class="info-text">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            请先在 Cloudflare 部署 Worker 代码，然后填写域名信息添加
+                        </p>
+                        <p class="info-text info-warning">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            必须有自己的域名才能收信，<code>*.workers.dev</code> 无法收信
+                        </p>
+                    </div>
+                    <div class="add-domain-form">
+                        <div class="form-group">
+                            <label class="label">域名</label>
+                            <input type="text" id="userDomainName" class="input" placeholder="example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="label">API 地址</label>
+                            <input type="text" id="userDomainApi" class="input" placeholder="https://example.com">
+                            <span class="form-hint">通常与域名相同，加上 https://</span>
+                        </div>
+                        <div class="add-domain-status" id="addDomainStatus"></div>
+                        <button class="btn btn-primary btn-full" id="submitDomainBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            验证并添加域名
+                        </button>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="current-domains-section">
+                        <h5>当前域名列表</h5>
+                        <div class="current-domains-list" id="currentDomainsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Worker 代码查看模态框 -->
+        <div class="modal-overlay" id="workerCodeModal">
+            <div class="modal worker-code-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        Cloudflare Worker 代码
+                    </h3>
+                    <button class="btn btn-close" id="closeWorkerCodeBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="worker-code-info">
+                        <h4>部署说明</h4>
+                        <ol class="deploy-steps" id="deploySteps">
+                            <li>登录 <a href="https://dash.cloudflare.com" target="_blank">Cloudflare Dashboard</a></li>
+                            <li>进入 Workers & Pages → Create Application → Create Worker</li>
+                            <li>复制下方代码粘贴到 Worker 中，点击 Deploy</li>
+                            <li id="deployStepKV" style="display: none;">创建 KV 命名空间 <code>EMAILS_KV</code> 并绑定到 Worker</li>
+                            <li id="deployStepAPI" style="display: none;">设置环境变量 <code>API_BASE</code> 为数据库 API 后端地址</li>
+                            <li>为 Worker 绑定自定义域名（Settings → Triggers → Custom Domains）</li>
+                            <li id="deployStepEmail" style="display: none;">在域名 Email Routing 中添加 Catch-all 规则指向此 Worker</li>
+                        </ol>
+                        <div class="deploy-tip deploy-success">
+                            <strong>💡 小贴士：</strong> 一个 Worker 可以绑定多个域名！只需在 Custom Domains 中添加多个域名，共享同一个 KV 存储。
+                        </div>
+                        <div class="deploy-tip deploy-warning">
+                            <strong>⚠️ 重要提示：</strong> 必须有自己的域名才能接收邮件！<code>workers.dev</code> 子域名只能作为 API 端点，无法配置 Email Routing 收信。
+                        </div>
+                        <div class="deploy-tip deploy-info">
+                            <strong>域名要求：</strong> 域名必须托管在 Cloudflare（免费）。如果域名在其他注册商，需要将 NS 记录改为 Cloudflare 提供的 NS 服务器。
+                        </div>
+                    </div>
+                    <div class="service-selector">
+                        <h4>选择服务功能 <span class="selector-hint">（可多选）</span></h4>
+                        <div class="service-checkboxes">
+                            <label class="service-checkbox">
+                                <input type="checkbox" id="serviceEmail" checked>
+                                <span class="checkbox-label">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <polyline points="22,6 12,13 2,6"/>
+                                    </svg>
+                                    邮箱服务
+                                </span>
+                            </label>
+                            <label class="service-checkbox">
+                                <input type="checkbox" id="serviceGitHub" checked>
+                                <span class="checkbox-label">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                                    </svg>
+                                    GitHub 代理服务
+                                </span>
+                            </label>
+                            <label class="service-checkbox">
+                                <input type="checkbox" id="serviceRegister" checked>
+                                <span class="checkbox-label">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="8.5" cy="7" r="4"/>
+                                        <line x1="20" y1="8" x2="20" y2="14"/>
+                                        <line x1="23" y1="11" x2="17" y2="11"/>
+                                    </svg>
+                                    注册机服务
+                                </span>
+                            </label>
+                            <label class="service-checkbox">
+                                <input type="checkbox" id="serviceApiHtml" checked>
+                                <span class="checkbox-label">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="16 18 22 12 16 6"/>
+                                        <polyline points="8 6 2 12 8 18"/>
+                                        <line x1="12" y1="2" x2="12" y2="22"/>
+                                    </svg>
+                                    API HTML 服务
+                                </span>
+                            </label>
+                            <label class="service-checkbox">
+                                <input type="checkbox" id="serviceFileProxy" checked>
+                                <span class="checkbox-label">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    文件加速下载
+                                </span>
+                            </label>
+                            <label class="service-checkbox">
+                                <input type="checkbox" id="serviceShortLink">
+                                <span class="checkbox-label">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                    </svg>
+                                    短链接服务
+                                </span>
+                            </label>
+                            <label class="service-checkbox">
+                                <input type="checkbox" id="serviceDocker">
+                                <span class="checkbox-label">
+                                    <svg class="icon docker-icon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186h-2.12a.186.186 0 00-.185.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z"/>
+                                    </svg>
+                                    Docker 镜像加速（反向代理）
+                                </span>
+                            </label>
+                        </div>
+                        
+                        <!-- Docker 反向代理服务器配置 -->
+                        <div class="docker-proxy-config" id="dockerProxyConfig" style="display: none;">
+                            <div class="config-divider"></div>
+                            <h5 class="config-title">Docker 反向代理服务器 <span class="required-mark">*</span></h5>
+                            <div class="form-group">
+                                <div class="docker-server-input-group">
+                                    <span class="docker-protocol-prefix">https://</span>
+                                    <input type="text" id="dockerProxyServer" class="input docker-server-input" 
+                                           placeholder="输入服务器域名，如: mirror.example.com" value="mirror.yljdteam.com">
+                                </div>
+                                <span class="form-hint">Worker 将把 Docker 请求转发到此服务器，必须已配置 Nginx Docker 反向代理</span>
+                            </div>
+                        </div>
+                        <div class="service-warning" id="serviceWarning" style="display: none;">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            <span>请至少选择一个服务功能</span>
+                        </div>
+                        
+                        <!-- 数据库选择（仅在启用邮箱服务时显示） -->
+                        <div class="database-options" id="databaseOptions" style="display: none;">
+                            <div class="database-divider"></div>
+                            <h5 class="database-title">选择数据库服务 <span class="selector-hint required">（必选）</span></h5>
+                            <div class="database-checkboxes">
+                                <label class="database-checkbox">
+                                    <input type="radio" name="databaseType" id="databaseKV" value="kv" checked>
+                                    <span class="checkbox-label">
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="9" y1="3" x2="9" y2="21"/>
+                                            <line x1="15" y1="3" x2="15" y2="21"/>
+                                        </svg>
+                                        Cloudflare KV 数据库
+                                    </span>
+                                </label>
+                                <label class="database-checkbox">
+                                    <input type="radio" name="databaseType" id="databaseOther" value="other">
+                                    <span class="checkbox-label">
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                                        </svg>
+                                        其他数据库服务（MySQL/PostgreSQL 等）
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="database-warning" id="databaseWarning" style="display: none;">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span>必须选择一个数据库服务</span>
+                            </div>
+                            
+                            <div class="database-form" id="databaseForm" style="display: none;">
+                                <div class="form-group">
+                                    <label class="label">API 后端地址</label>
+                                    <input type="text" id="databaseApiUrl" class="input" placeholder="https://api.example.com" pattern="^https://.*">
+                                    <span class="form-hint">MySQL/PostgreSQL 等数据库的 API 后端地址，必须为 https 协议</span>
+                                </div>
+                                
+                                <!-- SQL 脚本下载区域 -->
+                                <div class="sql-scripts-section">
+                                    <h5 class="sql-title">数据库脚本</h5>
+                                    <p class="sql-desc">选择需要的 SQL 脚本下载，在数据库中执行以创建表结构</p>
+                                    <div class="sql-buttons">
+                                        <button type="button" class="btn btn-sm btn-outline" id="downloadMySqlBtn">
+                                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                <polyline points="7 10 12 15 17 10"/>
+                                                <line x1="12" y1="15" x2="12" y2="3"/>
+                                            </svg>
+                                            MySQL 脚本
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline" id="downloadPostgresBtn">
+                                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                <polyline points="7 10 12 15 17 10"/>
+                                                <line x1="12" y1="15" x2="12" y2="3"/>
+                                            </svg>
+                                            PostgreSQL 脚本
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline" id="downloadBackendBtn">
+                                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                <polyline points="7 10 12 15 17 10"/>
+                                                <line x1="12" y1="15" x2="12" y2="3"/>
+                                            </svg>
+                                            后端代码
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="code-actions">
+                        <button class="btn btn-primary" id="copyWorkerCodeBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                            复制代码
+                        </button>
+                        <button class="btn btn-secondary" id="downloadWorkerCodeBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            下载文件
+                        </button>
+                    </div>
+                    <div class="code-container">
+                        <pre class="code-block"><code class="language-javascript" id="workerCodeBlock"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub 代理使用说明模态框 -->
+        <div class="modal-overlay" id="githubGuideModal">
+            <div class="modal github-guide-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                        </svg>
+                        GitHub 代理使用说明
+                    </h3>
+                    <button class="btn btn-close" id="closeGithubGuideBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="github-guide-section github-converter">
+                        <h4>链接转换</h4>
+                        <p>粘贴 GitHub 链接，选择域名，一键转换：</p>
+                        <div class="converter-url-input">
+                            <input type="text" id="githubOriginalUrl" class="input" placeholder="粘贴 GitHub 链接，如 https://github.com/user/repo">
+                        </div>
+                        <div class="converter-domain-label">选择代理域名：</div>
+                        <div class="converter-domain-grid" id="proxyDomainGrid"></div>
+                        <div class="converter-actions">
+                            <button class="btn btn-primary" id="convertUrlBtn">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 3 21 3 21 8"/>
+                                    <line x1="4" y1="20" x2="21" y2="3"/>
+                                    <polyline points="21 16 21 21 16 21"/>
+                                    <line x1="15" y1="15" x2="21" y2="21"/>
+                                    <line x1="4" y1="4" x2="9" y2="9"/>
+                                </svg>
+                                一键转换
+                            </button>
+                        </div>
+                        <div class="converter-result" id="converterResult" style="display: none;">
+                            <code id="convertedUrl"></code>
+                            <button class="btn btn-sm btn-copy-inline" id="copyConvertedUrl" title="复制">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 文件加速下载模态框 -->
+        <div class="modal-overlay" id="fileProxyModal">
+            <div class="modal github-guide-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        文件加速下载
+                    </h3>
+                    <button class="btn btn-close" id="closeFileProxyBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="github-guide-section file-proxy-section">
+                        <h4>链接转换</h4>
+                        <p>通过 Cloudflare 全球 CDN 加速下载任意 HTTPS 文件：</p>
+                        <div class="converter-url-input">
+                            <input type="text" id="fileProxyUrl" class="input" placeholder="粘贴任意文件下载链接，如 https://example.com/file.zip">
+                        </div>
+                        <div class="file-proxy-domain-info">
+                            <span class="domain-label">加速域名：</span>
+                            <code class="domain-value">download.qxfy.store</code>
+                        </div>
+                        <div class="converter-actions">
+                            <button class="btn btn-primary" id="convertFileUrlBtn">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6"/>
+                                    <polyline points="8 6 2 12 8 18"/>
+                                </svg>
+                                生成加速链接
+                            </button>
+                            <button class="btn btn-success" id="directDownloadBtn">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                一键下载
+                            </button>
+                        </div>
+                        <div class="converter-result" id="fileProxyResult" style="display: none;">
+                            <code id="convertedFileUrl"></code>
+                            <button class="btn btn-sm btn-copy-inline" id="copyConvertedFileUrl" title="复制">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="file-proxy-tips">
+                            <p class="tip-title">特性</p>
+                            <ul class="tip-list">
+                                <li>任意 HTTPS 文件加速</li>
+                                <li>无文件大小限制</li>
+                                <li>支持断点续传</li>
+                                <li>自动跟随重定向</li>
+                            </ul>
+                        </div>
+                        <div class="file-proxy-tips file-proxy-tips-warning">
+                            <p class="tip-title">注意事项：</p>
+                            <ul class="tip-list">
+                                <li>部分网站（如 python.org）可能拒绝代理请求</li>
+                                <li>如遇 403 错误，请直接从原站下载</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Docker 加速说明模态框 -->
+        <div class="modal-overlay" id="dockerModal">
+            <div class="modal docker-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <svg class="icon docker-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186h-2.12a.186.186 0 00-.185.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z"/>
+                        </svg>
+                        Docker 镜像加速
+                    </h3>
+                    <button class="btn btn-close" id="closeDockerBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="docker-guide-section">
+                        <div class="docker-server-info">
+                            <div class="server-badge">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                                    <line x1="6" y1="6" x2="6.01" y2="6"/>
+                                    <line x1="6" y1="18" x2="6.01" y2="18"/>
+                                </svg>
+                                <span>服务器反向代理</span>
+                            </div>
+                            <p>使用独立服务器代理，无 Cloudflare IP 限制</p>
+                        </div>
+                        
+                        <h4>服务器加速地址 <span class="required-mark">*</span></h4>
+                        <div class="docker-server-input-group">
+                            <span class="docker-protocol-prefix">https://</span>
+                            <input type="text" id="dockerServerDomain" class="input docker-server-input" 
+                                   placeholder="输入服务器域名，如: mirror.example.com" value="mirror.yljdteam.com">
+                            <button class="btn btn-sm btn-outline" id="saveDockerDomain" title="保存">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                    <polyline points="17 21 17 13 7 13 7 21"/>
+                                    <polyline points="7 3 7 8 15 8"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="form-hint docker-domain-hint">配置 Docker 反向代理的服务器域名，必须支持 HTTPS</span>
+                        
+                        <h4 style="margin-top: 24px;">配置方法</h4>
+                        
+                        <!-- 配置方法切换按钮 -->
+                        <div class="docker-method-tabs">
+                            <button class="docker-method-tab active" data-method="daemon">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                </svg>
+                                daemon.json
+                            </button>
+                            <button class="docker-method-tab" data-method="pull">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                直接拉取
+                            </button>
+                        </div>
+
+                        <!-- 方法 1: daemon.json 配置 -->
+                        <div class="docker-method-content active" id="dockerMethodDaemon">
+                            <div class="docker-example">
+                                <div class="example-title">一键配置命令</div>
+                                <pre class="docker-code-block"><code><span class="comment"># 直接覆盖写入 daemon.json 并重启 Docker</span>
+sudo tee /etc/docker/daemon.json &lt;&lt;EOF
+{
+  "registry-mirrors": [
+    "https://mirror.yljdteam.com"
+  ]
+}
+EOF
+sudo systemctl restart docker</code></pre>
+                            </div>
+                            <div class="docker-example">
+                                <div class="example-title">验证配置</div>
+                                <pre class="docker-code-block"><code><span class="comment"># 检查镜像加速是否生效</span>
+docker info | grep -A 5 "Registry Mirrors"</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- 方法 2: 直接拉取 -->
+                        <div class="docker-method-content" id="dockerMethodPull">
+                            <div class="docker-example">
+                                <div class="example-title">输入镜像名转换</div>
+                                <div class="docker-convert-form">
+                                    <input type="text" class="input docker-image-input" id="dockerImageInput" 
+                                           placeholder="输入镜像名，如: nginx / mysql:8.0 / bitnami/redis:latest">
+                                    <button class="btn btn-primary docker-convert-btn" id="dockerConvertBtn">
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 1l4 4-4 4"/>
+                                            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                                            <path d="M7 23l-4-4 4-4"/>
+                                            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                                        </svg>
+                                        转换
+                                    </button>
+                                </div>
+                                <div class="docker-convert-result" id="dockerConvertResult" style="display: none;">
+                                    <div class="docker-result-label">加速拉取命令：</div>
+                                    <pre class="docker-code-block docker-result-code"><code id="dockerResultCode"></code></pre>
+                                    <button class="btn btn-sm btn-outline docker-copy-btn" id="dockerCopyBtn">
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                        复制命令
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="docker-tips">
+                            <p class="tip-title">特性</p>
+                            <ul class="tip-list">
+                                <li>Nginx 反向代理加速</li>
+                                <li>无 Cloudflare IP 拉取次数限制</li>
+                                <li>支持 Docker Registry API v2</li>
+                                <li>支持分片下载（blob）</li>
+                            </ul>
+                        </div>
+
+                        <div class="docker-tips docker-tips-warning">
+                            <p class="tip-title">注意事项</p>
+                            <ul class="tip-list">
+                                <li>修改 daemon.json 后需要重启 Docker 服务</li>
+                                <li>服务器需配置 Nginx Docker 反向代理</li>
+                                <li>仅支持 Docker Hub 公共镜像加速</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 短链接模态框 -->
+        <div class="modal-overlay" id="shortLinkModal">
+            <div class="modal shortlink-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        生成短链接
+                    </h3>
+                    <button class="btn btn-close" id="closeShortLinkBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="shortlink-form">
+                        <div class="form-group">
+                            <label class="label">原始链接</label>
+                            <input type="url" id="shortLinkUrl" class="input" placeholder="https://example.com/very/long/url" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">短链接域名</label>
+                            <select id="shortLinkDomain" class="input shortlink-domain-select">
+                                <!-- 域名选项由 JS 动态填充 -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">链接标题（可选）</label>
+                            <input type="text" id="shortLinkTitle" class="input" placeholder="为链接添加描述">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="label">自定义短码（可选）</label>
+                                <input type="text" id="shortLinkCode" class="input" placeholder="mylink" pattern="[a-zA-Z0-9_\-]{3,20}">
+                                <span class="input-hint">3-20 字符，字母、数字、下划线、连字符</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="label">过期时间（可选）</label>
+                                <select id="shortLinkExpires" class="input">
+                                    <option value="">永不过期</option>
+                                    <option value="1">1 小时</option>
+                                    <option value="24">24 小时</option>
+                                    <option value="168">7 天</option>
+                                    <option value="720">30 天</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-full" id="createShortLinkBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            生成短链接
+                        </button>
+                    </div>
+
+                    <!-- 生成结果 -->
+                    <div class="shortlink-result" id="shortLinkResult" style="display: none;">
+                        <div class="divider"></div>
+                        <h4 class="result-title">短链接已生成</h4>
+                        <div class="result-url-box">
+                            <input type="text" id="shortLinkResultUrl" class="input result-url" readonly>
+                            <button class="btn btn-primary" id="copyShortLinkBtn">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                复制
+                            </button>
+                        </div>
+                        <div class="result-info">
+                            <span class="result-label">原始链接：</span>
+                            <span class="result-value" id="shortLinkOriginal"></span>
+                        </div>
+                        <div class="result-info" id="shortLinkExpiresInfo" style="display: none;">
+                            <span class="result-label">过期时间：</span>
+                            <span class="result-value" id="shortLinkExpiresAt"></span>
+                        </div>
+                    </div>
+
+                    <!-- 说明 -->
+                    <div class="shortlink-tips">
+                        <div class="tip-box">
+                            <p class="tip-title">特性</p>
+                            <ul class="tip-list">
+                                <li>免费使用</li>
+                                <li>自定义短码</li>
+                                <li>过期时间</li>
+                                <li>点击统计</li>
+                            </ul>
+                        </div>
+                        <div class="tip-box tip-warning">
+                            <p class="tip-title">注意</p>
+                            <ul class="tip-list">
+                                <li>禁止钓鱼、欺诈等违法用途</li>
+                                <li>禁止传播恶意链接</li>
+                                <li>违规将删除并封禁</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 管理员模态框 -->
+        <div class="modal-overlay" id="adminModal">
+            <div class="modal admin-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        管理后台
+                    </h3>
+                    <button class="btn btn-close" id="closeAdminBtn" title="关闭">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body admin-body">
+                    <!-- 管理员密钥 -->
+                    <div class="admin-key-section">
+                        <label for="adminKeyInput">管理员密钥</label>
+                        <input type="password" id="adminKeyInput" class="input" placeholder="输入管理员密钥以进行修改操作">
+                    </div>
+                    
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" data-tab="domains">域名管理</button>
+                    </div>
+
+                    <!-- 域名管理 -->
+                    <div class="admin-content" id="adminDomains">
+                        <div class="admin-section">
+                            <h5>添加域名</h5>
+                            <div class="admin-form">
+                                <input type="text" id="newDomainName" class="input" placeholder="域名 (如: example.com)">
+                                <input type="text" id="newDomainApi" class="input" placeholder="API地址 (如: https://example.com)">
+                                <button class="btn btn-add" id="addDomainBtn">添加域名</button>
+                            </div>
+                        </div>
+                        <div class="admin-section">
+                            <h5>当前域名列表</h5>
+                            <div class="admin-list" id="adminDomainList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
