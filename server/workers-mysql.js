@@ -57,6 +57,7 @@ const AIService = {
     const apiKey = env.MODELSCOPE_KEY || 'ms-7c9a95a1-bbfe-4011-8eba-11162b1dd120';
     
     try {
+      console.log('[ModelScope] Calling API...');
       const response = await fetch(this.MODELSCOPE_API, {
         method: 'POST',
         headers: {
@@ -75,14 +76,17 @@ const AIService = {
       });
       
       if (!response.ok) {
-        console.error('ModelScope API error:', response.status);
+        const errorText = await response.text();
+        console.error('[ModelScope] API error:', response.status, errorText.substring(0, 200));
         return null;
       }
       
       const data = await response.json();
-      return data.choices?.[0]?.message?.content || '';
+      const result = data.choices?.[0]?.message?.content || '';
+      console.log('[ModelScope] Success, response length:', result.length);
+      return result;
     } catch (error) {
-      console.error('ModelScope call failed:', error);
+      console.error('[ModelScope] Call failed:', error.message);
       return null;
     }
   },
@@ -96,6 +100,7 @@ const AIService = {
   async callAI(env, prompt) {
     // 优先使用 Cloudflare Workers AI
     if (env.AI) {
+      console.log('[AI] Using Cloudflare Workers AI, model:', this.MODEL);
       try {
         const response = await env.AI.run(this.MODEL, {
           messages: [
@@ -104,16 +109,21 @@ const AIService = {
           ],
           max_tokens: 500
         });
-        if (response.response) {
+        console.log('[AI] Cloudflare AI response:', JSON.stringify(response).substring(0, 200));
+        if (response && response.response) {
+          console.log('[AI] Cloudflare AI success, length:', response.response.length);
           return response.response;
         }
+        console.log('[AI] Cloudflare AI returned empty or invalid response');
       } catch (error) {
-        console.error('Cloudflare AI failed, switching to ModelScope:', error.message);
+        console.error('[AI] Cloudflare AI failed:', error.message, error.stack);
       }
+    } else {
+      console.log('[AI] env.AI not available, Cloudflare AI not bound');
     }
     
     // 备用：使用 ModelScope API
-    console.log('Using ModelScope API as fallback');
+    console.log('[AI] Using ModelScope API as fallback');
     return await this.callModelScope(env, prompt);
   },
   
