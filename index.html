@@ -285,6 +285,40 @@
                     </div>
                 </div>
 
+                <!-- 免费代理 IP -->
+                <div class="panel proxy-panel">
+                    <h2 class="panel-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        免费代理
+                    </h2>
+                    <p class="github-desc">
+                        免费 HTTP 代理，供爬虫使用
+                    </p>
+                    <div class="proxy-list" id="proxyList">
+                        <div class="proxy-item">
+                            <div class="proxy-info">
+                                <span class="proxy-ip">115.190.229.8:8888</span>
+                                <span class="proxy-type">HTTP</span>
+                            </div>
+                            <div class="proxy-actions">
+                                <button class="btn btn-xs btn-copy-proxy" data-proxy="http://115.190.229.8:8888" title="复制">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="proxy-usage">
+                        <code class="proxy-code">proxies = {"http": "http://115.190.229.8:8888"}</code>
+                    </div>
+                </div>
+
                 <!-- 历史邮箱 -->
                 <div class="panel history-panel">
                     <h2 class="panel-title">

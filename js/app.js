@@ -539,6 +539,19 @@ const App = {
             });
         });
 
+        // 代理 IP 复制按钮
+        document.querySelectorAll('.btn-copy-proxy').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const proxy = btn.dataset.proxy;
+                if (proxy) {
+                    const success = await Utils.copyToClipboard(proxy);
+                    if (success) {
+                        this.showToast('success', '已复制', '代理地址已复制到剪贴板');
+                    }
+                }
+            });
+        });
+
         // GitHub 链接转换
         this.elements.convertUrlBtn.addEventListener('click', () => {
             this.convertGitHubUrl();

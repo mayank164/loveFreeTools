@@ -4344,3 +4344,105 @@ body::after {
     animation: spin 1s linear infinite;
 }
 
+/* ==================== 代理 IP 面板 ==================== */
+
+.proxy-panel {
+    background: linear-gradient(135deg, rgba(255, 165, 0, 0.05) 0%, rgba(255, 69, 0, 0.05) 100%);
+    border: 1px solid rgba(255, 165, 0, 0.2);
+}
+
+.proxy-panel .panel-title .icon {
+    color: #ffa500;
+}
+
+.proxy-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.proxy-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255, 165, 0, 0.1);
+    border: 1px solid rgba(255, 165, 0, 0.2);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.proxy-item:hover {
+    background: rgba(255, 165, 0, 0.15);
+    border-color: rgba(255, 165, 0, 0.4);
+}
+
+.proxy-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.proxy-ip {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.proxy-type {
+    padding: 2px 8px;
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.proxy-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-xs {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+.btn-copy-proxy {
+    background: transparent;
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    color: #ffa500;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-copy-proxy:hover {
+    background: rgba(255, 165, 0, 0.2);
+    border-color: #ffa500;
+}
+
+.btn-copy-proxy .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.proxy-usage {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.proxy-code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #ffa500;
+    white-space: nowrap;
+}
+
