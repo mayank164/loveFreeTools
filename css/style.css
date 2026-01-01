@@ -4731,6 +4731,43 @@ body::after {
     white-space: nowrap;
 }
 
+.subdomain-dot {
+    padding: 10px 0;
+    color: #a78bfa;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    background: rgba(147, 51, 234, 0.1);
+    border-top: 1px solid rgba(147, 51, 234, 0.3);
+    border-bottom: 1px solid rgba(147, 51, 234, 0.3);
+}
+
+.subdomain-domain-select {
+    padding: 10px 12px;
+    background: rgba(147, 51, 234, 0.2);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    color: #a78bfa;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 28px;
+}
+
+.subdomain-domain-select:focus {
+    border-color: #a78bfa;
+}
+
+.subdomain-domain-select option {
+    background: #1a1f2e;
+    color: #f1f5f9;
+}
+
 .subdomain-url-input {
     width: 100%;
 }

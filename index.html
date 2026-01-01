@@ -296,7 +296,7 @@
                         免费子域名
                     </h2>
                     <p class="github-desc">
-                        申请免费 xxx.yljdteam.com 子域名
+                        申请免费子域名
                     </p>
                     <div class="github-actions">
                         <button class="btn btn-sm btn-subdomain" id="showSubdomainBtn">
@@ -1460,7 +1460,7 @@ func main() {
                 <div class="modal-body">
                     <div class="dns-info-box">
                         <p class="dns-intro">
-                            免费申请 <code>xxx.yljdteam.com</code> 子域名，支持多种 DNS 记录类型。
+                            免费申请子域名，支持 <code>lovefreetools.site</code> 和 <code>violet27team.xyz</code> 两个域名。
                         </p>
                     </div>
 
@@ -1471,10 +1471,14 @@ func main() {
                         <div class="dns-form-row">
                             <div class="dns-form-group dns-form-subdomain">
                                 <label class="form-label">子域名</label>
-                                <div class="subdomain-input-group">
-                                    <input type="text" id="dnsSubdomain" placeholder="www" class="subdomain-input" maxlength="63">
-                                    <span class="subdomain-suffix">.yljdteam.com</span>
-                                </div>
+                        <div class="subdomain-input-group">
+                            <input type="text" id="dnsSubdomain" placeholder="www" class="subdomain-input" maxlength="63">
+                            <span class="subdomain-dot">.</span>
+                            <select id="dnsDomain" class="subdomain-domain-select">
+                                <option value="lovefreetools.site">lovefreetools.site</option>
+                                <option value="violet27team.xyz">violet27team.xyz</option>
+                            </select>
+                        </div>
                                 <div class="subdomain-status" id="dnsStatus"></div>
                             </div>
                         </div>

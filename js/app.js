@@ -610,6 +610,7 @@ const App = {
         const closeSubdomainBtn = document.getElementById('closeSubdomainBtn');
         const createDnsBtn = document.getElementById('createDnsBtn');
         const dnsSubdomain = document.getElementById('dnsSubdomain');
+        const dnsDomain = document.getElementById('dnsDomain');
         const dnsType = document.getElementById('dnsType');
         const dnsValue = document.getElementById('dnsValue');
         const dnsTtl = document.getElementById('dnsTtl');
@@ -671,8 +672,7 @@ const App = {
             
             // 实时检查子域名可用性
             let checkTimer = null;
-            if (dnsSubdomain) {
-                dnsSubdomain.addEventListener('input', () => {
+            const checkSubdomainAvailability = () => {
                     const subdomain = dnsSubdomain.value.toLowerCase().trim();
                     
                     if (checkTimer) clearTimeout(checkTimer);
@@ -696,7 +696,8 @@ const App = {
                     
                     checkTimer = setTimeout(async () => {
                         try {
-                            const resp = await fetch(`${API_BASE}/api/dns/check/${subdomain}`);
+                            const domain = dnsDomain ? dnsDomain.value : 'lovefreetools.site';
+                            const resp = await fetch(`${API_BASE}/api/dns/check/${subdomain}?domain=${encodeURIComponent(domain)}`);
                             const data = await resp.json();
                             
                             if (data.available) {
@@ -705,15 +706,24 @@ const App = {
                                 dnsStatus.innerHTML = `<span class="status-error">${data.reason || '不可用'}</span>`;
                             }
                         } catch (error) {
+                            console.error('检查子域名失败:', error);
                             dnsStatus.innerHTML = '<span class="status-error">检查失败</span>';
                         }
                     }, 500);
-                });
+                };
+            
+            // 绑定事件监听
+            if (dnsSubdomain) {
+                dnsSubdomain.addEventListener('input', checkSubdomainAvailability);
+            }
+            if (dnsDomain) {
+                dnsDomain.addEventListener('change', checkSubdomainAvailability);
             }
             
             // 创建 DNS 记录
             createDnsBtn.addEventListener('click', async () => {
                 const subdomain = dnsSubdomain.value.toLowerCase().trim() || '@';
+                const domain = dnsDomain ? dnsDomain.value : 'lovefreetools.site';
                 const type = dnsType.value;
                 const value = dnsValue.value.trim();
                 const ttl = parseInt(dnsTtl.value) || 3600;
@@ -732,13 +742,13 @@ const App = {
                     const resp = await fetch(`${API_BASE}/api/dns`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ subdomain, type, value, ttl, priority, ownerEmail })
+                        body: JSON.stringify({ subdomain, domain, type, value, ttl, priority, ownerEmail })
                     });
                     
                     const data = await resp.json();
                     
                     if (data.success) {
-                        const fullDomain = data.record.fullDomain;
+                        const fullDomain = subdomain === '@' ? domain : `${subdomain}.${domain}`;
                         this.showToast('success', '创建成功', `DNS 记录已添加`);
                         
                         // 显示结果

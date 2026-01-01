@@ -887,6 +887,7 @@ function validateDnsValue(type, value) {
 // 检查子域名是否可用
 app.get('/api/dns/check/:subdomain', async (req, res) => {
     const { subdomain } = req.params;
+    const { domain = 'lovefreetools.site' } = req.query;
     const subdomainLower = subdomain.toLowerCase().trim();
     
     // @ 表示根域名
@@ -923,10 +924,10 @@ app.get('/api/dns/check/:subdomain', async (req, res) => {
             });
         }
         
-        // 检查是否已有记录
+        // 检查是否已有记录（按域名区分）
         const [existing] = await pool.query(
-            'SELECT subdomain FROM dns_records WHERE subdomain = ? LIMIT 1',
-            [subdomainLower]
+            'SELECT subdomain FROM dns_records WHERE subdomain = ? AND domain = ? LIMIT 1',
+            [subdomainLower, domain]
         );
         
         res.json({ 
@@ -974,7 +975,13 @@ app.get('/api/dns/:subdomain', async (req, res) => {
 
 // 创建 DNS 记录
 app.post('/api/dns', async (req, res) => {
-    const { subdomain, type, value, ttl = 3600, priority = 0, ownerEmail } = req.body;
+    const { subdomain, domain = 'lovefreetools.site', type, value, ttl = 3600, priority = 0, ownerEmail } = req.body;
+    
+    // 验证域名
+    const allowedDomains = ['lovefreetools.site', 'violet27team.xyz'];
+    if (!allowedDomains.includes(domain)) {
+        return res.status(400).json({ success: false, error: '不支持的域名' });
+    }
     
     if (!subdomain || !type || !value) {
         return res.status(400).json({ success: false, error: '缺少必要参数' });
@@ -1053,12 +1060,12 @@ app.post('/api/dns', async (req, res) => {
         
         // 创建记录
         const [result] = await pool.query(
-            `INSERT INTO dns_records (subdomain, record_type, record_value, ttl, priority, owner_email) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [subdomainLower, typeUpper, value, ttl, priority, ownerEmail || null]
+            `INSERT INTO dns_records (subdomain, domain, record_type, record_value, ttl, priority, owner_email) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [subdomainLower, domain, typeUpper, value, ttl, priority, ownerEmail || null]
         );
         
-        const fullDomain = subdomainLower === '@' ? 'yljdteam.com' : `${subdomainLower}.yljdteam.com`;
+        const fullDomain = subdomainLower === '@' ? domain : `${subdomainLower}.${domain}`;
         console.log(`DNS 记录已创建: ${typeUpper} ${fullDomain} -> ${value}`);
         
         res.json({
@@ -1144,11 +1151,16 @@ app.delete('/api/dns/:id', async (req, res) => {
 // DNS 解析查询（Worker 调用）
 app.get('/api/dns/:subdomain/resolve', async (req, res) => {
     const { subdomain } = req.params;
-    const { type } = req.query;
+    const { type, domain } = req.query;
     
     try {
         let query = 'SELECT * FROM dns_records WHERE subdomain = ? AND is_active = TRUE';
         const params = [subdomain.toLowerCase()];
+        
+        if (domain) {
+            query += ' AND domain = ?';
+            params.push(domain);
+        }
         
         if (type) {
             query += ' AND record_type = ?';

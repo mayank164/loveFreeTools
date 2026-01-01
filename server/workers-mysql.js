@@ -501,7 +501,7 @@ function getShortLinkErrorHTML(errorMessage, origin) {
 /**
  * 生成 DNS 信息页面 HTML
  */
-function getDnsInfoHTML(subdomain, records) {
+function getDnsInfoHTML(subdomain, domain, records) {
   const recordsHtml = records.map(r => `
     <tr>
       <td><span class="type-badge type-${r.type.toLowerCase()}">${r.type}</span></td>
@@ -516,7 +516,7 @@ function getDnsInfoHTML(subdomain, records) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subdomain}.yljdteam.com - DNS 记录</title>
+  <title>${subdomain}.${domain} - DNS 记录</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -601,7 +601,7 @@ function getDnsInfoHTML(subdomain, records) {
 <body>
   <div class="container">
     <div class="header">
-      <div class="domain">${subdomain}.yljdteam.com</div>
+      <div class="domain">${subdomain}.${domain}</div>
       <p class="subtitle">DNS 记录信息</p>
     </div>
     <table>
@@ -628,7 +628,7 @@ function getDnsInfoHTML(subdomain, records) {
 /**
  * 生成子域名错误页面 HTML
  */
-function getSubdomainErrorHTML(subdomain, errorMessage) {
+function getSubdomainErrorHTML(subdomain, domain, errorMessage) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -711,7 +711,7 @@ function getSubdomainErrorHTML(subdomain, errorMessage) {
   <div class="container">
     <div class="icon">:/</div>
     <h1>子域名不存在</h1>
-    <div class="domain">${subdomain}.yljdteam.com</div>
+    <div class="domain">${subdomain}.${domain}</div>
     <p class="error-msg">${errorMessage || '该子域名尚未注册或已过期'}</p>
     <div class="buttons">
       <a href="https://free.violetteam.cloud" class="primary">返回首页</a>
@@ -1609,17 +1609,29 @@ async function handleRequest(request, env) {
 
   // ==================== DNS 解析处理 ====================
   
-  // 检查是否为 yljdteam.com 的子域名请求
+  // 检查是否为免费子域名请求（支持多个域名）
   const host = url.hostname;
-  const subdomainMatch = host.match(/^([a-z0-9][a-z0-9-]*[a-z0-9]?)\.yljdteam\.com$/i);
+  const freeDomains = ['lovefreetools.site', 'violet27team.xyz'];
+  let subdomainMatch = null;
+  let matchedDomain = null;
   
-  if (subdomainMatch) {
+  for (const domain of freeDomains) {
+    const regex = new RegExp(`^([a-z0-9][a-z0-9-]*[a-z0-9]?)\\.${domain.replace('.', '\\.')}$`, 'i');
+    const match = host.match(regex);
+    if (match) {
+      subdomainMatch = match;
+      matchedDomain = domain;
+      break;
+    }
+  }
+  
+  if (subdomainMatch && matchedDomain) {
     const subdomain = subdomainMatch[1].toLowerCase();
     
-    // 排除主域名和 www
-    if (subdomain !== 'www' && subdomain !== 'yljdteam') {
+    // 排除 www
+    if (subdomain !== 'www') {
       try {
-        const dnsResp = await fetch(`${apiBase}/api/dns/${subdomain}/resolve`);
+        const dnsResp = await fetch(`${apiBase}/api/dns/${subdomain}/resolve?domain=${encodeURIComponent(matchedDomain)}`);
         const dnsData = await dnsResp.json();
         
         if (dnsData.success && dnsData.records && dnsData.records.length > 0) {
@@ -1652,7 +1664,7 @@ async function handleRequest(request, env) {
               case 'A':
               case 'AAAA':
                 // A/AAAA 记录返回 IP 信息页面
-                return new Response(getDnsInfoHTML(subdomain, dnsData.records), {
+                return new Response(getDnsInfoHTML(subdomain, matchedDomain, dnsData.records), {
                   status: 200,
                   headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
                 });
@@ -1666,7 +1678,7 @@ async function handleRequest(request, env) {
               
               default:
                 // 其他记录类型显示信息页
-                return new Response(getDnsInfoHTML(subdomain, dnsData.records), {
+                return new Response(getDnsInfoHTML(subdomain, matchedDomain, dnsData.records), {
                   status: 200,
                   headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
                 });
@@ -1674,14 +1686,14 @@ async function handleRequest(request, env) {
           }
         } else {
           // 子域名无记录，显示错误页面
-          return new Response(getSubdomainErrorHTML(subdomain, dnsData.error || '无 DNS 记录'), {
+          return new Response(getSubdomainErrorHTML(subdomain, matchedDomain, dnsData.error || '无 DNS 记录'), {
             status: 404,
             headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
           });
         }
       } catch (error) {
         console.error(`DNS 解析失败: ${subdomain}`, error);
-        return new Response(getSubdomainErrorHTML(subdomain, '服务暂时不可用'), {
+        return new Response(getSubdomainErrorHTML(subdomain, matchedDomain, '服务暂时不可用'), {
           status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
         });

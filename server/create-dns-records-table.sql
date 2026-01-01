@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS dns_records (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subdomain VARCHAR(63) NOT NULL,                  -- 子域名（如 www, mail, @表示根域名）
+    domain VARCHAR(255) NOT NULL DEFAULT 'lovefreetools.site',  -- 主域名
     record_type ENUM('A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA', 'REDIRECT') NOT NULL,
     record_value VARCHAR(2048) NOT NULL,             -- 记录值（IP、域名、文本等）
     ttl INT DEFAULT 3600,                            -- TTL（秒）
@@ -12,9 +13,10 @@ CREATE TABLE IF NOT EXISTS dns_records (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     INDEX idx_subdomain (subdomain),
+    INDEX idx_domain (domain),
     INDEX idx_type (record_type),
     INDEX idx_owner (owner_email),
-    UNIQUE KEY unique_record (subdomain, record_type, record_value(255))
+    UNIQUE KEY unique_record (subdomain, domain, record_type, record_value(255))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 保留子域名列表
