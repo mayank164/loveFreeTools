@@ -1921,7 +1921,7 @@ async function handleRequest(request, env) {
                 
                 // 通过香港服务器代理
                 try {
-                  const proxyServer = 'http://35.220.142.223:8090'; // 香港服务器代理端口
+                  const proxyServer = 'https://mirror.yljdteam.com:8443'; // 香港服务器代理端口 (HTTPS)
                   const targetPath = url.pathname + url.search;
                   const proxyUrl = `${proxyServer}/proxy?target=${encodeURIComponent(record.value)}&path=${encodeURIComponent(targetPath)}`;
                   
