@@ -643,15 +643,18 @@ const App = {
      */
     renderDomainSelector() {
         const domains = EmailAPI.getDomains();
-        const currentDomain = this.state.currentDomain || domains[0].name;
+        const currentDomain = (this.state.currentDomain || domains[0].name).replace(/\/+$/, '');
         
-        this.elements.domainGrid.innerHTML = domains.map((domain, index) => `
-            <button class="domain-btn ${domain.name === currentDomain ? 'active' : ''}" 
-                    data-domain="${domain.name}" 
+        this.elements.domainGrid.innerHTML = domains.map((domain, index) => {
+            const cleanName = domain.name.replace(/\/+$/, '');
+            return `
+            <button class="domain-btn ${cleanName === currentDomain ? 'active' : ''}" 
+                    data-domain="${cleanName}" 
                     data-index="${index}">
-                ${domain.name}
+                ${cleanName}
             </button>
-        `).join('');
+        `;
+        }).join('');
 
         // 绑定点击事件
         this.elements.domainGrid.querySelectorAll('.domain-btn').forEach(btn => {

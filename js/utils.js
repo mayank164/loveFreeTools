@@ -298,7 +298,7 @@ const Utils = {
         const parts = email.split('@');
         return {
             prefix: parts[0] || '',
-            domain: parts[1] || ''
+            domain: (parts[1] || '').replace(/\/+$/, '')  // 去除末尾斜杠
         };
     },
 
