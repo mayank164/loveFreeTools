@@ -720,6 +720,72 @@ function getCnameInfoHTML(subdomain, domain, target) {
 }
 
 /**
+ * 生成 CNAME 代理错误页面 HTML
+ */
+function getCnameErrorHTML(subdomain, domain, target, errorMsg) {
+  const fullDomain = `${subdomain}.${domain}`;
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fullDomain} - 代理错误</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f1f5f9;
+    }
+    .container { text-align: center; padding: 40px; max-width: 600px; }
+    .icon { font-size: 48px; margin-bottom: 20px; }
+    h1 { font-size: 24px; margin-bottom: 15px; color: #ef4444; }
+    .domain { font-size: 18px; color: #a78bfa; margin-bottom: 20px; font-family: monospace; }
+    .info {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .record { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .record:last-child { border-bottom: none; }
+    .label { color: #94a3b8; }
+    .value { color: #f87171; font-family: monospace; word-break: break-all; }
+    .note { color: #94a3b8; font-size: 14px; margin-top: 20px; }
+    a { color: #00f5d4; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">&#9888;</div>
+    <h1>无法连接目标服务器</h1>
+    <div class="domain">${fullDomain}</div>
+    <div class="info">
+      <div class="record">
+        <span class="label">目标域名</span>
+        <span class="value">${target}</span>
+      </div>
+      <div class="record">
+        <span class="label">错误信息</span>
+        <span class="value">${errorMsg || '连接超时或服务器无响应'}</span>
+      </div>
+    </div>
+    <p class="note">
+      请确保目标服务器正常运行且允许外部访问。<br>
+      <a href="https://free.violetteam.cloud">返回公益平台</a>
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
+/**
  * 生成 CNAME 绑定成功页面 HTML（指向 workers.dev）
  */
 function getCnameSuccessHTML(subdomain, domain, target) {
@@ -1842,13 +1908,57 @@ async function handleRequest(request, env) {
                 });
               
               case 'CNAME':
-                // CNAME 记录 - 显示绑定信息页面
-                // 注意：由于请求通过 Worker 路由，无法真正进行 DNS 级别的 CNAME 解析
-                // 用户需要在 Cloudflare 之外进行真正的 DNS 配置
-                return new Response(getCnameInfoHTML(subdomain, matchedDomain, record.value), {
-                  status: 200,
-                  headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
-                });
+                // CNAME 代理 - 反向代理到目标域名
+                const cnameTarget = record.value.toLowerCase();
+                
+                // 如果指向 workers.dev/pages.dev，显示绑定成功页面
+                if (cnameTarget.includes('workers.dev') || cnameTarget.includes('pages.dev')) {
+                  return new Response(getCnameSuccessHTML(subdomain, matchedDomain, record.value), {
+                    status: 200,
+                    headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+                  });
+                }
+                
+                // 尝试反向代理到目标域名
+                try {
+                  const targetUrl = new URL(url.pathname + url.search, `https://${record.value}`);
+                  
+                  // 创建新的请求头，修改 Host
+                  const proxyHeaders = new Headers(request.headers);
+                  proxyHeaders.set('Host', record.value);
+                  proxyHeaders.delete('cf-connecting-ip');
+                  proxyHeaders.delete('cf-ray');
+                  
+                  const controller = new AbortController();
+                  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+                  
+                  const proxyResp = await fetch(targetUrl.toString(), {
+                    method: request.method,
+                    headers: proxyHeaders,
+                    body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
+                    signal: controller.signal,
+                    redirect: 'follow'
+                  });
+                  
+                  clearTimeout(timeoutId);
+                  
+                  // 复制响应头
+                  const responseHeaders = new Headers(proxyResp.headers);
+                  responseHeaders.set('X-Proxied-By', 'FreeTools-DNS');
+                  responseHeaders.set('X-Original-Host', record.value);
+                  
+                  return new Response(proxyResp.body, {
+                    status: proxyResp.status,
+                    headers: responseHeaders
+                  });
+                } catch (proxyError) {
+                  console.error(`CNAME proxy error for ${subdomain}.${matchedDomain}:`, proxyError);
+                  // 代理失败，显示错误页面
+                  return new Response(getCnameErrorHTML(subdomain, matchedDomain, record.value, proxyError.message), {
+                    status: 502,
+                    headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+                  });
+                }
               
               case 'A':
               case 'AAAA':
