@@ -604,25 +604,39 @@ const App = {
             }
         }
 
-        // 子域名申请模态框
+        // DNS 管理模态框
         const subdomainModal = document.getElementById('subdomainModal');
         const showSubdomainBtn = document.getElementById('showSubdomainBtn');
         const closeSubdomainBtn = document.getElementById('closeSubdomainBtn');
-        const createSubdomainBtn = document.getElementById('createSubdomainBtn');
-        const subdomainInput = document.getElementById('subdomainInput');
-        const subdomainTargetUrl = document.getElementById('subdomainTargetUrl');
-        const subdomainOwnerEmail = document.getElementById('subdomainOwnerEmail');
-        const subdomainStatus = document.getElementById('subdomainStatus');
-        const subdomainResult = document.getElementById('subdomainResult');
-        const resultDomain = document.getElementById('resultDomain');
-        const copySubdomainBtn = document.getElementById('copySubdomainBtn');
-        const openSubdomainBtn = document.getElementById('openSubdomainBtn');
+        const createDnsBtn = document.getElementById('createDnsBtn');
+        const dnsSubdomain = document.getElementById('dnsSubdomain');
+        const dnsType = document.getElementById('dnsType');
+        const dnsValue = document.getElementById('dnsValue');
+        const dnsTtl = document.getElementById('dnsTtl');
+        const dnsPriority = document.getElementById('dnsPriority');
+        const dnsPriorityRow = document.getElementById('dnsPriorityRow');
+        const dnsOwnerEmail = document.getElementById('dnsOwnerEmail');
+        const dnsStatus = document.getElementById('dnsStatus');
+        const dnsResult = document.getElementById('dnsResult');
+        const resultDetails = document.getElementById('resultDetails');
+        const dnsValueLabel = document.getElementById('dnsValueLabel');
+        const dnsValueHint = document.getElementById('dnsValueHint');
+        
+        // 记录类型配置
+        const dnsTypeConfig = {
+            'A': { label: 'IPv4 地址', placeholder: '192.168.1.1', hint: '输入 IPv4 地址' },
+            'AAAA': { label: 'IPv6 地址', placeholder: '2001:db8::1', hint: '输入 IPv6 地址' },
+            'CNAME': { label: '目标域名', placeholder: 'example.com', hint: '输入目标域名（不含 http://）' },
+            'MX': { label: '邮件服务器', placeholder: 'mail.example.com', hint: '输入邮件服务器域名', showPriority: true },
+            'TXT': { label: '文本内容', placeholder: 'v=spf1 include:_spf.google.com ~all', hint: '输入文本记录内容' },
+            'REDIRECT': { label: '目标网址', placeholder: 'https://example.com', hint: '访问子域名时将跳转到此网址' }
+        };
         
         if (showSubdomainBtn && subdomainModal) {
             // 打开模态框
             showSubdomainBtn.addEventListener('click', () => {
                 subdomainModal.classList.add('active');
-                subdomainResult.style.display = 'none';
+                dnsResult.style.display = 'none';
             });
             
             // 关闭模态框
@@ -636,137 +650,126 @@ const App = {
                 }
             });
             
-            // 复制 DNS 值
-            document.querySelectorAll('.btn-copy-dns').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const value = btn.dataset.value;
-                    const success = await Utils.copyToClipboard(value);
-                    if (success) {
-                        this.showToast('success', '已复制', value);
+            // 记录类型切换
+            if (dnsType) {
+                dnsType.addEventListener('change', () => {
+                    const type = dnsType.value;
+                    const config = dnsTypeConfig[type] || dnsTypeConfig['REDIRECT'];
+                    
+                    dnsValueLabel.textContent = config.label;
+                    dnsValue.placeholder = config.placeholder;
+                    dnsValueHint.textContent = config.hint;
+                    
+                    // 显示/隐藏优先级
+                    if (config.showPriority) {
+                        dnsPriorityRow.style.display = 'block';
+                    } else {
+                        dnsPriorityRow.style.display = 'none';
                     }
                 });
-            });
+            }
             
             // 实时检查子域名可用性
             let checkTimer = null;
-            if (subdomainInput) {
-                subdomainInput.addEventListener('input', () => {
-                    const subdomain = subdomainInput.value.toLowerCase().trim();
+            if (dnsSubdomain) {
+                dnsSubdomain.addEventListener('input', () => {
+                    const subdomain = dnsSubdomain.value.toLowerCase().trim();
                     
                     if (checkTimer) clearTimeout(checkTimer);
                     
-                    if (subdomain.length < 3) {
-                        subdomainStatus.innerHTML = subdomain.length > 0 ? 
-                            '<span class="status-error">至少需要 3 个字符</span>' : '';
+                    if (!subdomain || subdomain === '@') {
+                        dnsStatus.innerHTML = subdomain === '@' ? '<span class="status-available">根域名</span>' : '';
+                        return;
+                    }
+                    
+                    if (subdomain.length < 2) {
+                        dnsStatus.innerHTML = '<span class="status-error">至少需要 2 个字符</span>';
                         return;
                     }
                     
                     if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]?$/.test(subdomain)) {
-                        subdomainStatus.innerHTML = '<span class="status-error">只能包含字母、数字和连字符</span>';
+                        dnsStatus.innerHTML = '<span class="status-error">只能包含字母、数字和连字符</span>';
                         return;
                     }
                     
-                    subdomainStatus.innerHTML = '<span class="status-checking">检查中...</span>';
+                    dnsStatus.innerHTML = '<span class="status-checking">检查中...</span>';
                     
                     checkTimer = setTimeout(async () => {
                         try {
-                            const resp = await fetch(`${API_BASE}/api/subdomains/check/${subdomain}`);
+                            const resp = await fetch(`${API_BASE}/api/dns/check/${subdomain}`);
                             const data = await resp.json();
                             
                             if (data.available) {
-                                subdomainStatus.innerHTML = '<span class="status-available">可以使用</span>';
+                                dnsStatus.innerHTML = '<span class="status-available">可以使用</span>';
                             } else {
-                                subdomainStatus.innerHTML = `<span class="status-error">${data.reason || '不可用'}</span>`;
+                                dnsStatus.innerHTML = `<span class="status-error">${data.reason || '不可用'}</span>`;
                             }
                         } catch (error) {
-                            subdomainStatus.innerHTML = '<span class="status-error">检查失败</span>';
+                            dnsStatus.innerHTML = '<span class="status-error">检查失败</span>';
                         }
                     }, 500);
                 });
             }
             
-            // 创建子域名
-            createSubdomainBtn.addEventListener('click', async () => {
-                const subdomain = subdomainInput.value.toLowerCase().trim();
-                const targetUrl = subdomainTargetUrl.value.trim();
-                const ownerEmail = subdomainOwnerEmail ? subdomainOwnerEmail.value.trim() : '';
+            // 创建 DNS 记录
+            createDnsBtn.addEventListener('click', async () => {
+                const subdomain = dnsSubdomain.value.toLowerCase().trim() || '@';
+                const type = dnsType.value;
+                const value = dnsValue.value.trim();
+                const ttl = parseInt(dnsTtl.value) || 3600;
+                const priority = parseInt(dnsPriority.value) || 0;
+                const ownerEmail = dnsOwnerEmail ? dnsOwnerEmail.value.trim() : '';
                 
-                if (!subdomain) {
-                    this.showToast('error', '错误', '请输入子域名');
+                if (!value) {
+                    this.showToast('error', '错误', '请输入记录值');
                     return;
                 }
                 
-                if (subdomain.length < 3) {
-                    this.showToast('error', '错误', '子域名至少需要 3 个字符');
-                    return;
-                }
-                
-                if (!targetUrl) {
-                    this.showToast('error', '错误', '请输入目标网址');
-                    return;
-                }
+                createDnsBtn.disabled = true;
+                createDnsBtn.innerHTML = '<span class="loading-spinner"></span> 创建中...';
                 
                 try {
-                    new URL(targetUrl);
-                } catch {
-                    this.showToast('error', '错误', '请输入有效的网址');
-                    return;
-                }
-                
-                createSubdomainBtn.disabled = true;
-                createSubdomainBtn.innerHTML = '<span class="loading-spinner"></span> 申请中...';
-                
-                try {
-                    const resp = await fetch(`${API_BASE}/api/subdomains`, {
+                    const resp = await fetch(`${API_BASE}/api/dns`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ subdomain, targetUrl, ownerEmail })
+                        body: JSON.stringify({ subdomain, type, value, ttl, priority, ownerEmail })
                     });
                     
                     const data = await resp.json();
                     
                     if (data.success) {
-                        const fullDomain = `https://${subdomain}.yljdteam.com`;
-                        this.showToast('success', '申请成功', `子域名已创建`);
+                        const fullDomain = data.record.fullDomain;
+                        this.showToast('success', '创建成功', `DNS 记录已添加`);
                         
                         // 显示结果
-                        resultDomain.innerHTML = `<a href="${fullDomain}" target="_blank">${fullDomain}</a>`;
-                        subdomainResult.style.display = 'block';
-                        
-                        // 复制到剪贴板
-                        await Utils.copyToClipboard(fullDomain);
+                        resultDetails.innerHTML = `
+                            <div class="result-record">
+                                <span class="result-type">${type}</span>
+                                <span class="result-name">${fullDomain}</span>
+                                <span class="result-arrow">→</span>
+                                <span class="result-value">${value}</span>
+                            </div>
+                        `;
+                        dnsResult.style.display = 'block';
                         
                         // 清空输入
-                        subdomainInput.value = '';
-                        subdomainTargetUrl.value = '';
-                        if (subdomainOwnerEmail) subdomainOwnerEmail.value = '';
-                        subdomainStatus.innerHTML = '';
-                        
-                        // 绑定复制和打开按钮
-                        copySubdomainBtn.onclick = async () => {
-                            await Utils.copyToClipboard(fullDomain);
-                            this.showToast('success', '已复制', fullDomain);
-                        };
-                        
-                        openSubdomainBtn.onclick = () => {
-                            window.open(fullDomain, '_blank');
-                        };
+                        dnsSubdomain.value = '';
+                        dnsValue.value = '';
+                        dnsStatus.innerHTML = '';
                     } else {
-                        this.showToast('error', '申请失败', data.error || '未知错误');
-                        subdomainStatus.innerHTML = `<span class="status-error">${data.error}</span>`;
+                        this.showToast('error', '创建失败', data.error || '未知错误');
                     }
                 } catch (error) {
-                    console.error('创建子域名失败:', error);
-                    this.showToast('error', '申请失败', error.message);
+                    console.error('创建 DNS 记录失败:', error);
+                    this.showToast('error', '创建失败', error.message);
                 } finally {
-                    createSubdomainBtn.disabled = false;
-                    createSubdomainBtn.innerHTML = `
+                    createDnsBtn.disabled = false;
+                    createDnsBtn.innerHTML = `
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="16"/>
-                            <line x1="8" y1="12" x2="16" y2="12"/>
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
-                        申请子域名
+                        添加记录
                     `;
                 }
             });

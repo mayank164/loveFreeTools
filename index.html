@@ -1438,9 +1438,9 @@ func main() {
             </div>
         </div>
 
-        <!-- 子域名申请模态框 -->
+        <!-- DNS 管理模态框 -->
         <div class="modal-overlay" id="subdomainModal">
-            <div class="modal subdomain-modal">
+            <div class="modal dns-modal">
                 <div class="modal-header">
                     <h3 class="modal-title">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1448,7 +1448,7 @@ func main() {
                             <line x1="2" y1="12" x2="22" y2="12"/>
                             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                         </svg>
-                        申请免费子域名
+                        免费 DNS 托管
                     </h3>
                     <button class="btn btn-close" id="closeSubdomainBtn" title="关闭">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1458,34 +1458,129 @@ func main() {
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="subdomain-info-box">
-                        <p class="subdomain-intro">
-                            申请一个免费的 <code>xxx.yljdteam.com</code> 子域名，可用于网站重定向、短链接等用途。
+                    <div class="dns-info-box">
+                        <p class="dns-intro">
+                            免费申请 <code>xxx.yljdteam.com</code> 子域名，支持多种 DNS 记录类型。
                         </p>
                     </div>
 
-                    <div class="form-section">
-                        <label class="form-label">子域名</label>
-                        <div class="subdomain-input-group">
-                            <input type="text" id="subdomainInput" placeholder="输入子域名" class="subdomain-input" maxlength="63" pattern="[a-z0-9][a-z0-9-]*[a-z0-9]?">
-                            <span class="subdomain-suffix">.yljdteam.com</span>
+                    <!-- 添加 DNS 记录表单 -->
+                    <div class="dns-form">
+                        <h4 class="dns-form-title">添加 DNS 记录</h4>
+                        
+                        <div class="dns-form-row">
+                            <div class="dns-form-group dns-form-subdomain">
+                                <label class="form-label">子域名</label>
+                                <div class="subdomain-input-group">
+                                    <input type="text" id="dnsSubdomain" placeholder="www" class="subdomain-input" maxlength="63">
+                                    <span class="subdomain-suffix">.yljdteam.com</span>
+                                </div>
+                                <div class="subdomain-status" id="dnsStatus"></div>
+                            </div>
                         </div>
-                        <div class="subdomain-status" id="subdomainStatus"></div>
+
+                        <div class="dns-form-row dns-form-row-2col">
+                            <div class="dns-form-group">
+                                <label class="form-label">记录类型</label>
+                                <select id="dnsType" class="input dns-select">
+                                    <option value="A">A - IPv4 地址</option>
+                                    <option value="AAAA">AAAA - IPv6 地址</option>
+                                    <option value="CNAME">CNAME - 别名</option>
+                                    <option value="MX">MX - 邮件服务器</option>
+                                    <option value="TXT">TXT - 文本记录</option>
+                                    <option value="REDIRECT" selected>REDIRECT - URL 跳转</option>
+                                </select>
+                            </div>
+                            <div class="dns-form-group">
+                                <label class="form-label">TTL (秒)</label>
+                                <select id="dnsTtl" class="input dns-select">
+                                    <option value="60">1 分钟</option>
+                                    <option value="300">5 分钟</option>
+                                    <option value="600">10 分钟</option>
+                                    <option value="1800">30 分钟</option>
+                                    <option value="3600" selected>1 小时</option>
+                                    <option value="86400">1 天</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="dns-form-row" id="dnsPriorityRow" style="display: none;">
+                            <div class="dns-form-group">
+                                <label class="form-label">优先级</label>
+                                <input type="number" id="dnsPriority" class="input" value="10" min="0" max="65535">
+                                <span class="form-hint">MX 记录使用，数值越小优先级越高</span>
+                            </div>
+                        </div>
+
+                        <div class="dns-form-row">
+                            <div class="dns-form-group">
+                                <label class="form-label" id="dnsValueLabel">记录值</label>
+                                <input type="text" id="dnsValue" class="input" placeholder="https://example.com">
+                                <span class="form-hint" id="dnsValueHint">访问子域名时将跳转到此网址</span>
+                            </div>
+                        </div>
+
+                        <div class="dns-form-row">
+                            <div class="dns-form-group">
+                                <label class="form-label">所有者邮箱（可选）</label>
+                                <input type="email" id="dnsOwnerEmail" class="input" placeholder="your@email.com">
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" id="createDnsBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            添加记录
+                        </button>
                     </div>
 
-                    <div class="form-section">
-                        <label class="form-label">目标网址</label>
-                        <input type="url" id="subdomainTargetUrl" placeholder="https://example.com" class="input subdomain-url-input">
-                        <span class="form-hint">访问子域名时将自动跳转到此网址</span>
+                    <!-- 记录类型说明 -->
+                    <div class="dns-types-guide">
+                        <h4 class="guide-title">记录类型说明</h4>
+                        <div class="dns-types-grid">
+                            <div class="dns-type-item">
+                                <span class="dns-type-badge type-a">A</span>
+                                <span class="dns-type-desc">将域名指向 IPv4 地址</span>
+                            </div>
+                            <div class="dns-type-item">
+                                <span class="dns-type-badge type-aaaa">AAAA</span>
+                                <span class="dns-type-desc">将域名指向 IPv6 地址</span>
+                            </div>
+                            <div class="dns-type-item">
+                                <span class="dns-type-badge type-cname">CNAME</span>
+                                <span class="dns-type-desc">将域名指向另一个域名</span>
+                            </div>
+                            <div class="dns-type-item">
+                                <span class="dns-type-badge type-mx">MX</span>
+                                <span class="dns-type-desc">指定邮件服务器</span>
+                            </div>
+                            <div class="dns-type-item">
+                                <span class="dns-type-badge type-txt">TXT</span>
+                                <span class="dns-type-desc">存储文本信息（SPF、验证等）</span>
+                            </div>
+                            <div class="dns-type-item">
+                                <span class="dns-type-badge type-redirect">REDIRECT</span>
+                                <span class="dns-type-desc">URL 301 跳转</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-section">
-                        <label class="form-label">所有者邮箱（可选）</label>
-                        <input type="email" id="subdomainOwnerEmail" placeholder="your@email.com" class="input">
-                        <span class="form-hint">用于接收子域名相关通知</span>
+                    <!-- 创建成功结果 -->
+                    <div class="dns-result" id="dnsResult" style="display: none;">
+                        <div class="result-success">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                            <span>DNS 记录创建成功</span>
+                        </div>
+                        <div class="result-details" id="resultDetails"></div>
                     </div>
 
-                    <div class="subdomain-warning">
+                    <!-- 使用须知 -->
+                    <div class="dns-warning">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
                             <line x1="12" y1="8" x2="12" y2="12"/>
@@ -1495,83 +1590,11 @@ func main() {
                             <strong>使用须知</strong>
                             <ul>
                                 <li>子域名仅供正当用途，禁止用于非法内容</li>
-                                <li>长期不活跃的子域名可能会被回收</li>
-                                <li>管理员保留删除违规子域名的权利</li>
+                                <li>CNAME 记录不能与其他记录类型共存</li>
+                                <li>DNS 解析生效可能需要几分钟时间</li>
+                                <li>管理员保留删除违规记录的权利</li>
                             </ul>
                         </div>
-                    </div>
-
-                    <button class="btn btn-primary btn-block btn-lg" id="createSubdomainBtn">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="16"/>
-                            <line x1="8" y1="12" x2="16" y2="12"/>
-                        </svg>
-                        申请子域名
-                    </button>
-
-                    <div class="subdomain-result" id="subdomainResult" style="display: none;">
-                        <div class="result-success">
-                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                <polyline points="22 4 12 14.01 9 11.01"/>
-                            </svg>
-                            <span>子域名创建成功！</span>
-                        </div>
-                        <div class="result-domain" id="resultDomain"></div>
-                        <div class="result-actions">
-                            <button class="btn btn-sm btn-copy" id="copySubdomainBtn">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                </svg>
-                                复制链接
-                            </button>
-                            <button class="btn btn-sm" id="openSubdomainBtn">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                                    <polyline points="15 3 21 3 21 9"/>
-                                    <line x1="10" y1="14" x2="21" y2="3"/>
-                                </svg>
-                                打开链接
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="dns-config-section">
-                        <h4 class="config-title">
-                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="7" height="7"/>
-                                <rect x="14" y="3" width="7" height="7"/>
-                                <rect x="14" y="14" width="7" height="7"/>
-                                <rect x="3" y="14" width="7" height="7"/>
-                            </svg>
-                            DNS 配置说明
-                        </h4>
-                        <div class="dns-records">
-                            <div class="dns-record">
-                                <div class="dns-record-header">
-                                    <span class="dns-type">CNAME</span>
-                                    <span class="dns-name">*.yljdteam.com</span>
-                                </div>
-                                <div class="dns-record-value">
-                                    <code>login.violetqqcom.workers.dev</code>
-                                    <button class="btn btn-xs btn-copy-dns" data-value="login.violetqqcom.workers.dev">复制</button>
-                                </div>
-                            </div>
-                            <div class="dns-record">
-                                <div class="dns-record-header">
-                                    <span class="dns-type">Worker 路由</span>
-                                    <span class="dns-name">Cloudflare Dashboard</span>
-                                </div>
-                                <div class="dns-record-value">
-                                    <code>*.yljdteam.com/*</code> → <code>login</code>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="dns-note">
-                            通配符子域名需要在 Cloudflare 中配置 DNS 记录和 Worker 路由，才能正常解析。
-                        </p>
                     </div>
                 </div>
             </div>

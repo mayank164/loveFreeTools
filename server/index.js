@@ -845,34 +845,74 @@ app.get('/api/links/:code/stats', async (req, res) => {
     }
 });
 
-// ==================== 子域名 API ====================
+// ==================== DNS 记录 API ====================
+
+const VALID_RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA', 'REDIRECT'];
+
+// 验证 DNS 记录值
+function validateDnsValue(type, value) {
+    switch (type) {
+        case 'A':
+            // IPv4 地址
+            return /^(\d{1,3}\.){3}\d{1,3}$/.test(value) && 
+                   value.split('.').every(n => parseInt(n) <= 255);
+        case 'AAAA':
+            // IPv6 地址（简化验证）
+            return /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(value) ||
+                   /^([0-9a-fA-F]{1,4}:)*::([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}$/.test(value);
+        case 'CNAME':
+        case 'NS':
+            // 域名格式
+            return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.?$/i.test(value);
+        case 'MX':
+            // 邮件服务器域名
+            return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.?$/i.test(value);
+        case 'TXT':
+            // 任意文本，长度限制
+            return value.length <= 1024;
+        case 'REDIRECT':
+            // URL 格式
+            try { new URL(value); return true; } catch { return false; }
+        case 'SRV':
+            // SRV 格式: priority weight port target
+            return /^\d+\s+\d+\s+\d+\s+[a-z0-9.-]+$/i.test(value);
+        case 'CAA':
+            // CAA 格式: flags tag value
+            return /^\d+\s+(issue|issuewild|iodef)\s+.+$/i.test(value);
+        default:
+            return false;
+    }
+}
 
 // 检查子域名是否可用
-app.get('/api/subdomains/check/:subdomain', async (req, res) => {
+app.get('/api/dns/check/:subdomain', async (req, res) => {
     const { subdomain } = req.params;
+    const subdomainLower = subdomain.toLowerCase().trim();
     
-    // 验证子域名格式
-    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(subdomain)) {
-        return res.json({ 
-            success: true, 
-            available: false, 
-            reason: '子域名格式无效，只能包含字母、数字和连字符' 
-        });
-    }
-    
-    if (subdomain.length < 3) {
-        return res.json({ 
-            success: true, 
-            available: false, 
-            reason: '子域名至少需要 3 个字符' 
-        });
+    // @ 表示根域名
+    if (subdomainLower !== '@') {
+        if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(subdomainLower)) {
+            return res.json({ 
+                success: true, 
+                available: false, 
+                reason: '子域名格式无效，只能包含字母、数字和连字符' 
+            });
+        }
+        
+        if (subdomainLower.length < 2) {
+            return res.json({ 
+                success: true, 
+                available: false, 
+                reason: '子域名至少需要 2 个字符' 
+            });
+        }
     }
     
     try {
         // 检查是否为保留子域名
         const [reserved] = await pool.query(
             'SELECT subdomain FROM reserved_subdomains WHERE subdomain = ?',
-            [subdomain.toLowerCase()]
+            [subdomainLower]
         );
         
         if (reserved.length > 0) {
@@ -883,16 +923,16 @@ app.get('/api/subdomains/check/:subdomain', async (req, res) => {
             });
         }
         
-        // 检查是否已被注册
+        // 检查是否已有记录
         const [existing] = await pool.query(
-            'SELECT subdomain FROM subdomains WHERE subdomain = ?',
-            [subdomain.toLowerCase()]
+            'SELECT subdomain FROM dns_records WHERE subdomain = ? LIMIT 1',
+            [subdomainLower]
         );
         
         res.json({ 
             success: true, 
             available: existing.length === 0,
-            reason: existing.length > 0 ? '该子域名已被注册' : null
+            reason: existing.length > 0 ? '该子域名已有 DNS 记录' : null
         });
     } catch (error) {
         console.error('检查子域名失败:', error);
@@ -900,36 +940,79 @@ app.get('/api/subdomains/check/:subdomain', async (req, res) => {
     }
 });
 
-// 创建子域名
-app.post('/api/subdomains', async (req, res) => {
-    const { subdomain, targetUrl, ownerEmail, expiresIn } = req.body;
+// 获取子域名的所有 DNS 记录
+app.get('/api/dns/:subdomain', async (req, res) => {
+    const { subdomain } = req.params;
     
-    if (!subdomain || !targetUrl) {
+    try {
+        const [rows] = await pool.query(
+            `SELECT id, subdomain, record_type, record_value, ttl, priority, proxied, created_at, is_active 
+             FROM dns_records WHERE subdomain = ? AND is_active = TRUE ORDER BY record_type, priority`,
+            [subdomain.toLowerCase()]
+        );
+        
+        res.json({
+            success: true,
+            subdomain: subdomain.toLowerCase(),
+            fullDomain: subdomain === '@' ? 'yljdteam.com' : `${subdomain.toLowerCase()}.yljdteam.com`,
+            records: rows.map(r => ({
+                id: r.id,
+                type: r.record_type,
+                value: r.record_value,
+                ttl: r.ttl,
+                priority: r.priority,
+                proxied: r.proxied,
+                createdAt: r.created_at
+            })),
+            count: rows.length
+        });
+    } catch (error) {
+        console.error('获取 DNS 记录失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 创建 DNS 记录
+app.post('/api/dns', async (req, res) => {
+    const { subdomain, type, value, ttl = 3600, priority = 0, ownerEmail } = req.body;
+    
+    if (!subdomain || !type || !value) {
         return res.status(400).json({ success: false, error: '缺少必要参数' });
     }
     
     const subdomainLower = subdomain.toLowerCase().trim();
+    const typeUpper = type.toUpperCase();
     
-    // 验证子域名格式
-    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(subdomainLower)) {
+    // 验证记录类型
+    if (!VALID_RECORD_TYPES.includes(typeUpper)) {
         return res.status(400).json({ 
             success: false, 
-            error: '子域名格式无效，只能包含字母、数字和连字符' 
+            error: `不支持的记录类型，支持: ${VALID_RECORD_TYPES.join(', ')}` 
         });
     }
     
-    if (subdomainLower.length < 3) {
+    // 验证子域名格式（@ 表示根域名）
+    if (subdomainLower !== '@' && !/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(subdomainLower)) {
         return res.status(400).json({ 
             success: false, 
-            error: '子域名至少需要 3 个字符' 
+            error: '子域名格式无效' 
         });
     }
     
-    // 验证目标 URL
-    try {
-        new URL(targetUrl);
-    } catch {
-        return res.status(400).json({ success: false, error: '目标 URL 格式无效' });
+    // 验证记录值
+    if (!validateDnsValue(typeUpper, value)) {
+        return res.status(400).json({ 
+            success: false, 
+            error: `${typeUpper} 记录值格式无效` 
+        });
+    }
+    
+    // 验证 TTL
+    if (ttl < 60 || ttl > 86400) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'TTL 必须在 60-86400 秒之间' 
+        });
     }
     
     try {
@@ -943,143 +1026,155 @@ app.post('/api/subdomains', async (req, res) => {
             return res.status(400).json({ success: false, error: '该子域名为系统保留' });
         }
         
-        // 检查是否已存在
-        const [existing] = await pool.query(
-            'SELECT subdomain FROM subdomains WHERE subdomain = ?',
-            [subdomainLower]
-        );
-        
-        if (existing.length > 0) {
-            return res.status(400).json({ success: false, error: '该子域名已被注册' });
+        // CNAME 记录不能与其他记录共存
+        if (typeUpper === 'CNAME') {
+            const [existing] = await pool.query(
+                'SELECT id FROM dns_records WHERE subdomain = ? AND record_type != "CNAME"',
+                [subdomainLower]
+            );
+            if (existing.length > 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'CNAME 记录不能与其他记录类型共存' 
+                });
+            }
+        } else {
+            const [existingCname] = await pool.query(
+                'SELECT id FROM dns_records WHERE subdomain = ? AND record_type = "CNAME"',
+                [subdomainLower]
+            );
+            if (existingCname.length > 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: '该子域名已有 CNAME 记录，不能添加其他类型' 
+                });
+            }
         }
         
-        // 计算过期时间
-        let expiresAt = null;
-        if (expiresIn && expiresIn > 0) {
-            expiresAt = new Date(Date.now() + expiresIn * 24 * 60 * 60 * 1000);
-        }
-        
-        // 创建子域名
+        // 创建记录
         const [result] = await pool.query(
-            `INSERT INTO subdomains (subdomain, target_url, owner_email, expires_at) 
-             VALUES (?, ?, ?, ?)`,
-            [subdomainLower, targetUrl, ownerEmail || null, expiresAt]
+            `INSERT INTO dns_records (subdomain, record_type, record_value, ttl, priority, owner_email) 
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [subdomainLower, typeUpper, value, ttl, priority, ownerEmail || null]
         );
         
-        console.log(`子域名已创建: ${subdomainLower}.yljdteam.com -> ${targetUrl}`);
+        const fullDomain = subdomainLower === '@' ? 'yljdteam.com' : `${subdomainLower}.yljdteam.com`;
+        console.log(`DNS 记录已创建: ${typeUpper} ${fullDomain} -> ${value}`);
         
         res.json({
             success: true,
-            subdomain: {
+            record: {
                 id: result.insertId,
                 subdomain: subdomainLower,
-                fullDomain: `${subdomainLower}.yljdteam.com`,
-                targetUrl,
-                ownerEmail: ownerEmail || null,
-                expiresAt
+                fullDomain,
+                type: typeUpper,
+                value,
+                ttl,
+                priority
             }
         });
     } catch (error) {
-        console.error('创建子域名失败:', error);
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, error: '该 DNS 记录已存在' });
+        }
+        console.error('创建 DNS 记录失败:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// 获取子域名信息
-app.get('/api/subdomains/:subdomain', async (req, res) => {
-    const { subdomain } = req.params;
+// 更新 DNS 记录
+app.put('/api/dns/:id', async (req, res) => {
+    const { id } = req.params;
+    const { value, ttl, priority, proxied } = req.body;
     
     try {
-        const [rows] = await pool.query(
-            `SELECT id, subdomain, target_url, record_type, clicks, created_at, expires_at, is_active 
-             FROM subdomains WHERE subdomain = ?`,
-            [subdomain.toLowerCase()]
-        );
-        
-        if (rows.length === 0) {
-            return res.status(404).json({ success: false, error: '子域名不存在' });
+        // 获取现有记录
+        const [existing] = await pool.query('SELECT * FROM dns_records WHERE id = ?', [id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ success: false, error: '记录不存在' });
         }
         
-        const record = rows[0];
+        const record = existing[0];
+        const newValue = value || record.record_value;
         
-        // 检查是否过期
-        const isExpired = record.expires_at && new Date(record.expires_at) < new Date();
+        // 验证新值
+        if (value && !validateDnsValue(record.record_type, value)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `${record.record_type} 记录值格式无效` 
+            });
+        }
+        
+        await pool.query(
+            `UPDATE dns_records SET 
+                record_value = ?, 
+                ttl = ?, 
+                priority = ?, 
+                proxied = ?,
+                updated_at = NOW()
+             WHERE id = ?`,
+            [newValue, ttl || record.ttl, priority ?? record.priority, proxied ?? record.proxied, id]
+        );
+        
+        res.json({ success: true, message: '记录已更新' });
+    } catch (error) {
+        console.error('更新 DNS 记录失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 删除 DNS 记录
+app.delete('/api/dns/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        const [result] = await pool.query('DELETE FROM dns_records WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: '记录不存在' });
+        }
+        
+        res.json({ success: true, message: '记录已删除' });
+    } catch (error) {
+        console.error('删除 DNS 记录失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// DNS 解析查询（Worker 调用）
+app.get('/api/dns/:subdomain/resolve', async (req, res) => {
+    const { subdomain } = req.params;
+    const { type } = req.query;
+    
+    try {
+        let query = 'SELECT * FROM dns_records WHERE subdomain = ? AND is_active = TRUE';
+        const params = [subdomain.toLowerCase()];
+        
+        if (type) {
+            query += ' AND record_type = ?';
+            params.push(type.toUpperCase());
+        }
+        
+        query += ' ORDER BY priority ASC';
+        
+        const [rows] = await pool.query(query, params);
+        
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: '无 DNS 记录' });
+        }
         
         res.json({
             success: true,
-            subdomain: {
-                id: record.id,
-                subdomain: record.subdomain,
-                fullDomain: `${record.subdomain}.yljdteam.com`,
-                targetUrl: record.target_url,
-                recordType: record.record_type,
-                clicks: record.clicks,
-                createdAt: record.created_at,
-                expiresAt: record.expires_at,
-                isActive: record.is_active && !isExpired,
-                isExpired
-            }
+            records: rows.map(r => ({
+                type: r.record_type,
+                value: r.record_value,
+                ttl: r.ttl,
+                priority: r.priority,
+                proxied: r.proxied
+            }))
         });
     } catch (error) {
-        console.error('获取子域名信息失败:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// 子域名重定向（Worker 调用）
-app.get('/api/subdomains/:subdomain/redirect', async (req, res) => {
-    const { subdomain } = req.params;
-    
-    try {
-        const [rows] = await pool.query(
-            'SELECT id, target_url, expires_at, is_active FROM subdomains WHERE subdomain = ?',
-            [subdomain.toLowerCase()]
-        );
-        
-        if (rows.length === 0) {
-            return res.status(404).json({ success: false, error: '子域名不存在' });
-        }
-        
-        const record = rows[0];
-        
-        // 检查是否过期
-        if (record.expires_at && new Date(record.expires_at) < new Date()) {
-            return res.status(410).json({ success: false, error: '子域名已过期' });
-        }
-        
-        // 检查是否启用
-        if (!record.is_active) {
-            return res.status(403).json({ success: false, error: '子域名已停用' });
-        }
-        
-        // 更新点击次数
-        await pool.query('UPDATE subdomains SET clicks = clicks + 1 WHERE id = ?', [record.id]);
-        
-        res.json({ success: true, targetUrl: record.target_url });
-    } catch (error) {
-        console.error('子域名重定向失败:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// 删除子域名（需要验证所有者）
-app.delete('/api/subdomains/:subdomain', requireAdminKey, async (req, res) => {
-    const { subdomain } = req.params;
-    
-    try {
-        const [result] = await pool.query(
-            'DELETE FROM subdomains WHERE subdomain = ?',
-            [subdomain.toLowerCase()]
-        );
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, error: '子域名不存在' });
-        }
-        
-        console.log(`子域名已删除: ${subdomain}.yljdteam.com`);
-        res.json({ success: true, message: '子域名已删除' });
-    } catch (error) {
-        console.error('删除子域名失败:', error);
+        console.error('DNS 解析失败:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

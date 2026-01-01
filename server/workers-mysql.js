@@ -499,6 +499,133 @@ function getShortLinkErrorHTML(errorMessage, origin) {
 }
 
 /**
+ * 生成 DNS 信息页面 HTML
+ */
+function getDnsInfoHTML(subdomain, records) {
+  const recordsHtml = records.map(r => `
+    <tr>
+      <td><span class="type-badge type-${r.type.toLowerCase()}">${r.type}</span></td>
+      <td>${r.value}</td>
+      <td>${r.ttl}s</td>
+      <td>${r.priority || '-'}</td>
+    </tr>
+  `).join('');
+  
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subdomain}.yljdteam.com - DNS 记录</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .domain {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      color: #00f5d4;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    th {
+      background: rgba(147, 51, 234, 0.2);
+      color: #a78bfa;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    td {
+      font-size: 14px;
+      color: #f1f5f9;
+    }
+    .type-badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: monospace;
+    }
+    .type-a { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    .type-aaaa { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+    .type-cname { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .type-mx { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .type-txt { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+    .type-redirect { background: rgba(0, 245, 212, 0.2); color: #00f5d4; }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+    }
+    a {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #00f5d4;
+      color: #0a0e17;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    a:hover { background: #00c4aa; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="domain">${subdomain}.yljdteam.com</div>
+      <p class="subtitle">DNS 记录信息</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>类型</th>
+          <th>值</th>
+          <th>TTL</th>
+          <th>优先级</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${recordsHtml}
+      </tbody>
+    </table>
+    <div class="footer">
+      <a href="https://free.violetteam.cloud">返回首页</a>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
  * 生成子域名错误页面 HTML
  */
 function getSubdomainErrorHTML(subdomain, errorMessage) {
@@ -1480,7 +1607,7 @@ async function handleRequest(request, env) {
     });
   };
 
-  // ==================== 子域名重定向 ====================
+  // ==================== DNS 解析处理 ====================
   
   // 检查是否为 yljdteam.com 的子域名请求
   const host = url.hostname;
@@ -1492,27 +1619,68 @@ async function handleRequest(request, env) {
     // 排除主域名和 www
     if (subdomain !== 'www' && subdomain !== 'yljdteam') {
       try {
-        const redirectResp = await fetch(`${apiBase}/api/subdomains/${subdomain}/redirect`);
-        const redirectData = await redirectResp.json();
+        const dnsResp = await fetch(`${apiBase}/api/dns/${subdomain}/resolve`);
+        const dnsData = await dnsResp.json();
         
-        if (redirectData.success && redirectData.targetUrl) {
-          // 302 临时重定向
-          return new Response(null, {
-            status: 302,
-            headers: {
-              ...corsHeaders,
-              'Location': redirectData.targetUrl
+        if (dnsData.success && dnsData.records && dnsData.records.length > 0) {
+          // 处理不同的记录类型
+          for (const record of dnsData.records) {
+            switch (record.type) {
+              case 'REDIRECT':
+                // URL 重定向
+                return new Response(null, {
+                  status: 301,
+                  headers: {
+                    ...corsHeaders,
+                    'Location': record.value,
+                    'Cache-Control': `public, max-age=${record.ttl}`
+                  }
+                });
+              
+              case 'CNAME':
+                // CNAME 代理（反向代理到目标域名）
+                const targetUrl = new URL(url.pathname + url.search, `https://${record.value}`);
+                const proxyResp = await fetch(targetUrl.toString(), {
+                  method: request.method,
+                  headers: request.headers
+                });
+                return new Response(proxyResp.body, {
+                  status: proxyResp.status,
+                  headers: proxyResp.headers
+                });
+              
+              case 'A':
+              case 'AAAA':
+                // A/AAAA 记录返回 IP 信息页面
+                return new Response(getDnsInfoHTML(subdomain, dnsData.records), {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+                });
+              
+              case 'TXT':
+                // TXT 记录返回文本
+                return new Response(record.value, {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'text/plain; charset=utf-8' }
+                });
+              
+              default:
+                // 其他记录类型显示信息页
+                return new Response(getDnsInfoHTML(subdomain, dnsData.records), {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+                });
             }
-          });
+          }
         } else {
-          // 子域名不存在或已过期，显示错误页面
-          return new Response(getSubdomainErrorHTML(subdomain, redirectData.error), {
+          // 子域名无记录，显示错误页面
+          return new Response(getSubdomainErrorHTML(subdomain, dnsData.error || '无 DNS 记录'), {
             status: 404,
             headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
           });
         }
       } catch (error) {
-        console.error(`子域名重定向失败: ${subdomain}`, error);
+        console.error(`DNS 解析失败: ${subdomain}`, error);
         return new Response(getSubdomainErrorHTML(subdomain, '服务暂时不可用'), {
           status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
