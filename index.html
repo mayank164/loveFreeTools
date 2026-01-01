@@ -1159,6 +1159,8 @@ docker info | grep -A 5 "Registry Mirrors"</code></pre>
                         <div class="code-tabs">
                             <button class="code-tab active" data-lang="python">Python</button>
                             <button class="code-tab" data-lang="curl">cURL</button>
+                            <button class="code-tab" data-lang="cmd">CMD</button>
+                            <button class="code-tab" data-lang="powershell">PowerShell</button>
                             <button class="code-tab" data-lang="nodejs">Node.js</button>
                             <button class="code-tab" data-lang="java">Java</button>
                             <button class="code-tab" data-lang="go">Go</button>
@@ -1177,6 +1179,32 @@ print(response.text)</pre>
 
 # HTTPS 请求
 curl -x http://115.190.229.8:8888 https://example.com</pre>
+                            <pre class="code-block" id="proxyCodeCmd" style="display:none;">:: 设置代理环境变量
+set HTTP_PROXY=http://115.190.229.8:8888
+set HTTPS_PROXY=http://115.190.229.8:8888
+
+:: 使用 curl (Windows 10+)
+curl http://example.com
+
+:: 或者使用 pip
+pip install package_name
+
+:: 取消代理
+set HTTP_PROXY=
+set HTTPS_PROXY=</pre>
+                            <pre class="code-block" id="proxyCodePowershell" style="display:none;"># 设置代理环境变量
+$env:HTTP_PROXY = "http://115.190.229.8:8888"
+$env:HTTPS_PROXY = "http://115.190.229.8:8888"
+
+# 使用 Invoke-WebRequest
+Invoke-WebRequest -Uri "http://example.com" -Proxy "http://115.190.229.8:8888"
+
+# 或者使用 curl
+curl.exe -x http://115.190.229.8:8888 http://example.com
+
+# 取消代理
+Remove-Item Env:HTTP_PROXY
+Remove-Item Env:HTTPS_PROXY</pre>
                             <pre class="code-block" id="proxyCodeNodejs" style="display:none;">const axios = require('axios');
 const HttpsProxyAgent = require('https-proxy-agent');
 
