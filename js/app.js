@@ -604,6 +604,121 @@ const App = {
             }
         }
 
+        // 子域名申请
+        const createSubdomainBtn = document.getElementById('createSubdomainBtn');
+        const subdomainInput = document.getElementById('subdomainInput');
+        const subdomainTargetUrl = document.getElementById('subdomainTargetUrl');
+        const subdomainStatus = document.getElementById('subdomainStatus');
+        
+        if (createSubdomainBtn) {
+            // 实时检查子域名可用性
+            let checkTimer = null;
+            if (subdomainInput) {
+                subdomainInput.addEventListener('input', () => {
+                    const subdomain = subdomainInput.value.toLowerCase().trim();
+                    
+                    if (checkTimer) clearTimeout(checkTimer);
+                    
+                    if (subdomain.length < 3) {
+                        subdomainStatus.innerHTML = subdomain.length > 0 ? 
+                            '<span class="status-error">至少需要 3 个字符</span>' : '';
+                        return;
+                    }
+                    
+                    if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]?$/.test(subdomain)) {
+                        subdomainStatus.innerHTML = '<span class="status-error">只能包含字母、数字和连字符</span>';
+                        return;
+                    }
+                    
+                    subdomainStatus.innerHTML = '<span class="status-checking">检查中...</span>';
+                    
+                    checkTimer = setTimeout(async () => {
+                        try {
+                            const resp = await fetch(`${API_BASE}/api/subdomains/check/${subdomain}`);
+                            const data = await resp.json();
+                            
+                            if (data.available) {
+                                subdomainStatus.innerHTML = '<span class="status-available">可以使用</span>';
+                            } else {
+                                subdomainStatus.innerHTML = `<span class="status-error">${data.reason || '不可用'}</span>`;
+                            }
+                        } catch (error) {
+                            subdomainStatus.innerHTML = '<span class="status-error">检查失败</span>';
+                        }
+                    }, 500);
+                });
+            }
+            
+            createSubdomainBtn.addEventListener('click', async () => {
+                const subdomain = subdomainInput.value.toLowerCase().trim();
+                const targetUrl = subdomainTargetUrl.value.trim();
+                
+                if (!subdomain) {
+                    this.showToast('error', '错误', '请输入子域名');
+                    return;
+                }
+                
+                if (subdomain.length < 3) {
+                    this.showToast('error', '错误', '子域名至少需要 3 个字符');
+                    return;
+                }
+                
+                if (!targetUrl) {
+                    this.showToast('error', '错误', '请输入目标网址');
+                    return;
+                }
+                
+                try {
+                    new URL(targetUrl);
+                } catch {
+                    this.showToast('error', '错误', '请输入有效的网址');
+                    return;
+                }
+                
+                createSubdomainBtn.disabled = true;
+                createSubdomainBtn.innerHTML = '<span class="loading-spinner"></span> 申请中...';
+                
+                try {
+                    const resp = await fetch(`${API_BASE}/api/subdomains`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subdomain, targetUrl })
+                    });
+                    
+                    const data = await resp.json();
+                    
+                    if (data.success) {
+                        const fullDomain = `${subdomain}.yljdteam.com`;
+                        this.showToast('success', '申请成功', `子域名 ${fullDomain} 已创建`);
+                        
+                        // 复制到剪贴板
+                        await Utils.copyToClipboard(`https://${fullDomain}`);
+                        
+                        // 清空输入
+                        subdomainInput.value = '';
+                        subdomainTargetUrl.value = '';
+                        subdomainStatus.innerHTML = `<span class="status-success">https://${fullDomain} 已复制</span>`;
+                    } else {
+                        this.showToast('error', '申请失败', data.error || '未知错误');
+                        subdomainStatus.innerHTML = `<span class="status-error">${data.error}</span>`;
+                    }
+                } catch (error) {
+                    console.error('创建子域名失败:', error);
+                    this.showToast('error', '申请失败', error.message);
+                } finally {
+                    createSubdomainBtn.disabled = false;
+                    createSubdomainBtn.innerHTML = `
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        申请子域名
+                    `;
+                }
+            });
+        }
+
         // GitHub 链接转换
         this.elements.convertUrlBtn.addEventListener('click', () => {
             this.convertGitHubUrl();

@@ -14,8 +14,12 @@ logs/
 # Build output
 dist/
 release/
+electron/dist/
+android-app/android/
+android-app/ios/
 *.zip
 *.tar.gz
+*.exe
 
 # IDE
 .idea/

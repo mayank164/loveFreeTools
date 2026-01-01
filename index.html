@@ -282,8 +282,8 @@
                             </svg>
                             生成短链接
                         </button>
-                    </div>
-                </div>
+                            </div>
+                        </div>
 
                 <!-- 免费代理 IP -->
                 <div class="panel proxy-panel">
@@ -311,9 +311,9 @@
                                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                     </svg>
                                 </button>
+                        </div>
                             </div>
                         </div>
-                    </div>
                     <div class="proxy-actions-row">
                         <button class="btn btn-sm btn-primary" id="showProxyUsageBtn">
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -324,7 +324,36 @@
                             </svg>
                             使用详情
                         </button>
+                            </div>
+                </div>
+
+                <!-- 免费子域名 -->
+                <div class="panel subdomain-panel" id="subdomainPanel">
+                    <h2 class="panel-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        免费子域名
+                    </h2>
+                    <p class="github-desc">
+                        申请 xxx.yljdteam.com 免费子域名
+                    </p>
+                    <div class="subdomain-input-group">
+                        <input type="text" id="subdomainInput" placeholder="输入子域名" class="subdomain-input" maxlength="63">
+                        <span class="subdomain-suffix">.yljdteam.com</span>
                     </div>
+                    <input type="url" id="subdomainTargetUrl" placeholder="目标网址 (https://...)" class="subdomain-url-input">
+                    <button class="btn btn-primary btn-block" id="createSubdomainBtn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        申请子域名
+                    </button>
+                    <div class="subdomain-status" id="subdomainStatus"></div>
                 </div>
 
                 <!-- 历史邮箱 -->
@@ -338,9 +367,9 @@
                     </h2>
                     <div class="history-list" id="historyList">
                         <div class="empty-state small">暂无记录</div>
+                        </div>
                     </div>
-                </div>
-
+                    
                 <!-- 使用说明 - 精简版 -->
                 <div class="panel safety-panel compact">
                     <div class="safety-compact">
@@ -348,7 +377,7 @@
                         <span class="safety-badge">GitHub 限 60次/分钟</span>
                         <span class="safety-badge">Cloudflare Workers</span>
                             </div>
-                        </div>
+                </div>
             </aside>
         </main>
 

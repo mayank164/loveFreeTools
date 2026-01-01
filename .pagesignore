@@ -1,0 +1,10 @@
+electron/
+android-app/
+node_modules/
+proxy-server/
+server/
+.git/
+*.exe
+*.zip
+*.tar.gz
+

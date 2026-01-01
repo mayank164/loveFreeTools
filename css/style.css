@@ -4615,3 +4615,125 @@ body::after {
     line-height: 1.8;
 }
 
+/* ==================== 子域名面板 ==================== */
+
+.subdomain-panel {
+    background: linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+}
+
+.subdomain-panel .panel-title {
+    color: #a78bfa;
+}
+
+.subdomain-panel .panel-title .icon {
+    stroke: #a78bfa;
+}
+
+.subdomain-input-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.subdomain-input {
+    flex: 1;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+    border-radius: 6px 0 0 6px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.subdomain-input:focus {
+    border-color: #a78bfa;
+}
+
+.subdomain-input::placeholder {
+    color: var(--text-muted);
+}
+
+.subdomain-suffix {
+    padding: 10px 12px;
+    background: rgba(147, 51, 234, 0.2);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    color: #a78bfa;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.subdomain-url-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.subdomain-url-input:focus {
+    border-color: #a78bfa;
+}
+
+.subdomain-url-input::placeholder {
+    color: var(--text-muted);
+}
+
+.subdomain-panel .btn-primary {
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    border: none;
+    color: white;
+}
+
+.subdomain-panel .btn-primary:hover {
+    background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+}
+
+.subdomain-status {
+    margin-top: 8px;
+    font-size: 12px;
+    min-height: 18px;
+}
+
+.subdomain-status .status-checking {
+    color: var(--text-muted);
+}
+
+.subdomain-status .status-available {
+    color: var(--success);
+}
+
+.subdomain-status .status-error {
+    color: var(--error);
+}
+
+.subdomain-status .status-success {
+    color: #a78bfa;
+    font-family: var(--font-mono);
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+

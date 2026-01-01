@@ -499,6 +499,103 @@ function getShortLinkErrorHTML(errorMessage, origin) {
 }
 
 /**
+ * 生成子域名错误页面 HTML
+ */
+function getSubdomainErrorHTML(subdomain, errorMessage) {
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>子域名不存在 - 公益平台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+      max-width: 500px;
+    }
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+    h1 {
+      color: #f59e0b;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+    .domain {
+      font-family: 'JetBrains Mono', monospace;
+      color: #00f5d4;
+      font-size: 18px;
+      background: rgba(0, 245, 212, 0.1);
+      padding: 8px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+    .error-msg {
+      color: #94a3b8;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    a {
+      display: inline-block;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .primary {
+      background: #00f5d4;
+      color: #0a0e17;
+    }
+    .primary:hover {
+      background: #00c4aa;
+    }
+    .secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">:/</div>
+    <h1>子域名不存在</h1>
+    <div class="domain">${subdomain}.yljdteam.com</div>
+    <p class="error-msg">${errorMessage || '该子域名尚未注册或已过期'}</p>
+    <div class="buttons">
+      <a href="https://free.violetteam.cloud" class="primary">返回首页</a>
+      <a href="https://free.violetteam.cloud#subdomain" class="secondary">申请子域名</a>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
  * 生成 API 文档 HTML 页面
  */
 function getApiDocumentationHTML(origin) {
@@ -1382,6 +1479,47 @@ async function handleRequest(request, env) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   };
+
+  // ==================== 子域名重定向 ====================
+  
+  // 检查是否为 yljdteam.com 的子域名请求
+  const host = url.hostname;
+  const subdomainMatch = host.match(/^([a-z0-9][a-z0-9-]*[a-z0-9]?)\.yljdteam\.com$/i);
+  
+  if (subdomainMatch) {
+    const subdomain = subdomainMatch[1].toLowerCase();
+    
+    // 排除主域名和 www
+    if (subdomain !== 'www' && subdomain !== 'yljdteam') {
+      try {
+        const redirectResp = await fetch(`${apiBase}/api/subdomains/${subdomain}/redirect`);
+        const redirectData = await redirectResp.json();
+        
+        if (redirectData.success && redirectData.targetUrl) {
+          // 302 临时重定向
+          return new Response(null, {
+            status: 302,
+            headers: {
+              ...corsHeaders,
+              'Location': redirectData.targetUrl
+            }
+          });
+        } else {
+          // 子域名不存在或已过期，显示错误页面
+          return new Response(getSubdomainErrorHTML(subdomain, redirectData.error), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+          });
+        }
+      } catch (error) {
+        console.error(`子域名重定向失败: ${subdomain}`, error);
+        return new Response(getSubdomainErrorHTML(subdomain, '服务暂时不可用'), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+        });
+      }
+    }
+  }
 
   // ==================== AI API 端点 ====================
   

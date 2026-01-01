@@ -845,6 +845,245 @@ app.get('/api/links/:code/stats', async (req, res) => {
     }
 });
 
+// ==================== 子域名 API ====================
+
+// 检查子域名是否可用
+app.get('/api/subdomains/check/:subdomain', async (req, res) => {
+    const { subdomain } = req.params;
+    
+    // 验证子域名格式
+    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(subdomain)) {
+        return res.json({ 
+            success: true, 
+            available: false, 
+            reason: '子域名格式无效，只能包含字母、数字和连字符' 
+        });
+    }
+    
+    if (subdomain.length < 3) {
+        return res.json({ 
+            success: true, 
+            available: false, 
+            reason: '子域名至少需要 3 个字符' 
+        });
+    }
+    
+    try {
+        // 检查是否为保留子域名
+        const [reserved] = await pool.query(
+            'SELECT subdomain FROM reserved_subdomains WHERE subdomain = ?',
+            [subdomain.toLowerCase()]
+        );
+        
+        if (reserved.length > 0) {
+            return res.json({ 
+                success: true, 
+                available: false, 
+                reason: '该子域名为系统保留' 
+            });
+        }
+        
+        // 检查是否已被注册
+        const [existing] = await pool.query(
+            'SELECT subdomain FROM subdomains WHERE subdomain = ?',
+            [subdomain.toLowerCase()]
+        );
+        
+        res.json({ 
+            success: true, 
+            available: existing.length === 0,
+            reason: existing.length > 0 ? '该子域名已被注册' : null
+        });
+    } catch (error) {
+        console.error('检查子域名失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 创建子域名
+app.post('/api/subdomains', async (req, res) => {
+    const { subdomain, targetUrl, ownerEmail, expiresIn } = req.body;
+    
+    if (!subdomain || !targetUrl) {
+        return res.status(400).json({ success: false, error: '缺少必要参数' });
+    }
+    
+    const subdomainLower = subdomain.toLowerCase().trim();
+    
+    // 验证子域名格式
+    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(subdomainLower)) {
+        return res.status(400).json({ 
+            success: false, 
+            error: '子域名格式无效，只能包含字母、数字和连字符' 
+        });
+    }
+    
+    if (subdomainLower.length < 3) {
+        return res.status(400).json({ 
+            success: false, 
+            error: '子域名至少需要 3 个字符' 
+        });
+    }
+    
+    // 验证目标 URL
+    try {
+        new URL(targetUrl);
+    } catch {
+        return res.status(400).json({ success: false, error: '目标 URL 格式无效' });
+    }
+    
+    try {
+        // 检查是否为保留子域名
+        const [reserved] = await pool.query(
+            'SELECT subdomain FROM reserved_subdomains WHERE subdomain = ?',
+            [subdomainLower]
+        );
+        
+        if (reserved.length > 0) {
+            return res.status(400).json({ success: false, error: '该子域名为系统保留' });
+        }
+        
+        // 检查是否已存在
+        const [existing] = await pool.query(
+            'SELECT subdomain FROM subdomains WHERE subdomain = ?',
+            [subdomainLower]
+        );
+        
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, error: '该子域名已被注册' });
+        }
+        
+        // 计算过期时间
+        let expiresAt = null;
+        if (expiresIn && expiresIn > 0) {
+            expiresAt = new Date(Date.now() + expiresIn * 24 * 60 * 60 * 1000);
+        }
+        
+        // 创建子域名
+        const [result] = await pool.query(
+            `INSERT INTO subdomains (subdomain, target_url, owner_email, expires_at) 
+             VALUES (?, ?, ?, ?)`,
+            [subdomainLower, targetUrl, ownerEmail || null, expiresAt]
+        );
+        
+        console.log(`子域名已创建: ${subdomainLower}.yljdteam.com -> ${targetUrl}`);
+        
+        res.json({
+            success: true,
+            subdomain: {
+                id: result.insertId,
+                subdomain: subdomainLower,
+                fullDomain: `${subdomainLower}.yljdteam.com`,
+                targetUrl,
+                ownerEmail: ownerEmail || null,
+                expiresAt
+            }
+        });
+    } catch (error) {
+        console.error('创建子域名失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 获取子域名信息
+app.get('/api/subdomains/:subdomain', async (req, res) => {
+    const { subdomain } = req.params;
+    
+    try {
+        const [rows] = await pool.query(
+            `SELECT id, subdomain, target_url, record_type, clicks, created_at, expires_at, is_active 
+             FROM subdomains WHERE subdomain = ?`,
+            [subdomain.toLowerCase()]
+        );
+        
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: '子域名不存在' });
+        }
+        
+        const record = rows[0];
+        
+        // 检查是否过期
+        const isExpired = record.expires_at && new Date(record.expires_at) < new Date();
+        
+        res.json({
+            success: true,
+            subdomain: {
+                id: record.id,
+                subdomain: record.subdomain,
+                fullDomain: `${record.subdomain}.yljdteam.com`,
+                targetUrl: record.target_url,
+                recordType: record.record_type,
+                clicks: record.clicks,
+                createdAt: record.created_at,
+                expiresAt: record.expires_at,
+                isActive: record.is_active && !isExpired,
+                isExpired
+            }
+        });
+    } catch (error) {
+        console.error('获取子域名信息失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 子域名重定向（Worker 调用）
+app.get('/api/subdomains/:subdomain/redirect', async (req, res) => {
+    const { subdomain } = req.params;
+    
+    try {
+        const [rows] = await pool.query(
+            'SELECT id, target_url, expires_at, is_active FROM subdomains WHERE subdomain = ?',
+            [subdomain.toLowerCase()]
+        );
+        
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: '子域名不存在' });
+        }
+        
+        const record = rows[0];
+        
+        // 检查是否过期
+        if (record.expires_at && new Date(record.expires_at) < new Date()) {
+            return res.status(410).json({ success: false, error: '子域名已过期' });
+        }
+        
+        // 检查是否启用
+        if (!record.is_active) {
+            return res.status(403).json({ success: false, error: '子域名已停用' });
+        }
+        
+        // 更新点击次数
+        await pool.query('UPDATE subdomains SET clicks = clicks + 1 WHERE id = ?', [record.id]);
+        
+        res.json({ success: true, targetUrl: record.target_url });
+    } catch (error) {
+        console.error('子域名重定向失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 删除子域名（需要验证所有者）
+app.delete('/api/subdomains/:subdomain', requireAdminKey, async (req, res) => {
+    const { subdomain } = req.params;
+    
+    try {
+        const [result] = await pool.query(
+            'DELETE FROM subdomains WHERE subdomain = ?',
+            [subdomain.toLowerCase()]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: '子域名不存在' });
+        }
+        
+        console.log(`子域名已删除: ${subdomain}.yljdteam.com`);
+        res.json({ success: true, message: '子域名已删除' });
+    } catch (error) {
+        console.error('删除子域名失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ==================== 清理任务 ====================
 
 async function cleanupExpiredData() {
@@ -863,6 +1102,14 @@ async function cleanupExpiredData() {
         );
         if (linkResult.affectedRows > 0) {
             console.log(`已清理 ${linkResult.affectedRows} 个过期短链接`);
+        }
+        
+        // 清理过期子域名
+        const [subdomainResult] = await pool.query(
+            'DELETE FROM subdomains WHERE expires_at IS NOT NULL AND expires_at < NOW()'
+        );
+        if (subdomainResult.affectedRows > 0) {
+            console.log(`已清理 ${subdomainResult.affectedRows} 个过期子域名`);
         }
     } catch (error) {
         console.error('清理过期数据失败:', error);
