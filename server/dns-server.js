@@ -54,7 +54,7 @@ async function getDnsRecord(subdomain, domain) {
     }
 }
 
-// 代理请求到目标服务器
+// 代理请求到目标域名
 async function proxyRequest(req, res, targetHost, targetPath) {
     return new Promise((resolve) => {
         const options = {
@@ -73,7 +73,6 @@ async function proxyRequest(req, res, targetHost, targetPath) {
         };
 
         const proxyReq = https.request(options, (proxyRes) => {
-            // 复制响应头
             const headers = { ...proxyRes.headers };
             headers['X-Proxied-By'] = 'FreeTools-DNS';
             delete headers['content-encoding'];
@@ -94,6 +93,112 @@ async function proxyRequest(req, res, targetHost, targetPath) {
             proxyReq.destroy();
             res.writeHead(504, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(getErrorPage(targetHost, '连接超时'));
+            resolve();
+        });
+
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+            req.pipe(proxyReq);
+        } else {
+            proxyReq.end();
+        }
+    });
+}
+
+// 代理请求到 IP 地址
+async function proxyRequestToIP(req, res, targetIP, targetPath, isIPv6 = false) {
+    return new Promise((resolve) => {
+        // 获取原始 Host 头
+        const originalHost = req.headers.host?.split(':')[0] || targetIP;
+        
+        const options = {
+            hostname: targetIP,
+            port: 443,
+            path: targetPath,
+            method: req.method,
+            headers: {
+                'Host': originalHost, // 使用原始域名作为 Host
+                'User-Agent': req.headers['user-agent'] || 'FreeTools-DNS-Proxy/1.0',
+                'Accept': req.headers['accept'] || '*/*',
+                'Accept-Language': req.headers['accept-language'] || 'zh-CN,zh;q=0.9',
+                'Connection': 'close'
+            },
+            timeout: 15000,
+            rejectUnauthorized: false, // IP 地址可能没有有效证书
+            family: isIPv6 ? 6 : 4
+        };
+
+        const proxyReq = https.request(options, (proxyRes) => {
+            const headers = { ...proxyRes.headers };
+            headers['X-Proxied-By'] = 'FreeTools-DNS';
+            headers['X-Target-IP'] = targetIP;
+            delete headers['content-encoding'];
+            
+            res.writeHead(proxyRes.statusCode, headers);
+            proxyRes.pipe(res);
+            resolve();
+        });
+
+        proxyReq.on('error', (err) => {
+            console.error(`Proxy error to IP ${targetIP}: ${err.message}`);
+            // 如果 HTTPS 失败，尝试 HTTP
+            proxyRequestToIPHttp(req, res, targetIP, targetPath, originalHost, isIPv6).then(resolve);
+        });
+
+        proxyReq.on('timeout', () => {
+            proxyReq.destroy();
+            res.writeHead(504, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(getErrorPage(targetIP, '连接超时'));
+            resolve();
+        });
+
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+            req.pipe(proxyReq);
+        } else {
+            proxyReq.end();
+        }
+    });
+}
+
+// HTTP 回退代理
+async function proxyRequestToIPHttp(req, res, targetIP, targetPath, originalHost, isIPv6) {
+    return new Promise((resolve) => {
+        const options = {
+            hostname: targetIP,
+            port: 80,
+            path: targetPath,
+            method: req.method,
+            headers: {
+                'Host': originalHost,
+                'User-Agent': req.headers['user-agent'] || 'FreeTools-DNS-Proxy/1.0',
+                'Accept': req.headers['accept'] || '*/*',
+                'Connection': 'close'
+            },
+            timeout: 15000,
+            family: isIPv6 ? 6 : 4
+        };
+
+        const proxyReq = http.request(options, (proxyRes) => {
+            const headers = { ...proxyRes.headers };
+            headers['X-Proxied-By'] = 'FreeTools-DNS';
+            headers['X-Target-IP'] = targetIP;
+            headers['X-Protocol'] = 'HTTP';
+            
+            res.writeHead(proxyRes.statusCode, headers);
+            proxyRes.pipe(res);
+            resolve();
+        });
+
+        proxyReq.on('error', (err) => {
+            console.error(`HTTP Proxy error to IP ${targetIP}: ${err.message}`);
+            res.writeHead(502, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(getErrorPage(targetIP, err.message));
+            resolve();
+        });
+
+        proxyReq.on('timeout', () => {
+            proxyReq.destroy();
+            res.writeHead(504, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(getErrorPage(targetIP, '连接超时'));
             resolve();
         });
 
@@ -180,13 +285,18 @@ const server = http.createServer(async (req, res) => {
             break;
             
         case 'CNAME':
-            // 反向代理
-            const targetPath = req.url || '/';
-            await proxyRequest(req, res, record.record_value, targetPath);
+            // 反向代理到域名
+            const cnamePath = req.url || '/';
+            await proxyRequest(req, res, record.record_value, cnamePath, false);
             break;
             
         case 'A':
         case 'AAAA':
+            // 反向代理到 IP 地址
+            const ipPath = req.url || '/';
+            await proxyRequestToIP(req, res, record.record_value, ipPath, record.record_type === 'AAAA');
+            break;
+            
         case 'TXT':
         case 'MX':
         default:
