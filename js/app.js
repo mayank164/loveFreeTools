@@ -697,7 +697,7 @@ const App = {
                     checkTimer = setTimeout(async () => {
                         try {
                             const domain = dnsDomain ? dnsDomain.value : 'lovefreetools.site';
-                            const resp = await fetch(`${API_BASE}/api/dns/check/${subdomain}?domain=${encodeURIComponent(domain)}`);
+                            const resp = await fetch(`${EmailAPI.API_BASE}/api/dns/check/${subdomain}?domain=${encodeURIComponent(domain)}`);
                             const data = await resp.json();
                             
                             if (data.available) {
@@ -739,7 +739,7 @@ const App = {
                 createDnsBtn.innerHTML = '<span class="loading-spinner"></span> 创建中...';
                 
                 try {
-                    const resp = await fetch(`${API_BASE}/api/dns`, {
+                    const resp = await fetch(`${EmailAPI.API_BASE}/api/dns`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ subdomain, domain, type, value, ttl, priority, ownerEmail })
