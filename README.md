@@ -1,4 +1,4 @@
-# Free Email Platform - 公益平台
+# Love Free Tools - 公益平台
 
 一个基于 Cloudflare Workers 和 Node.js 的免费公益服务平台，提供临时邮箱、短链接生成、GitHub 代理、文件加速下载等功能，集成 AI 智能分析能力。
 
@@ -22,6 +22,7 @@
 | GitHub 代理 | 域名后接仓库路径 | https://{domain}/{user}/{repo} |
 | 文件加速 | 使用 proxy 路径 | https://{domain}/proxy/?url={URL} |
 | 短链接 | 使用 /s/ 路径 | https://{domain}/s/{code} |
+| HTTP 代理 | 配置代理地址 | 115.190.229.8:8888 |
 
 当前可用域名：
 
@@ -101,6 +102,28 @@ AI 模型配置：
 - **无大小限制**：不限制文件大小
 - **自动重定向**：自动跟随 HTTP 重定向
 - **保留文件名**：保持原始文件名
+
+### 6. 免费 HTTP 代理
+
+为爬虫和自动化工具提供免费的国内 HTTP 代理服务：
+
+- **代理地址**：`115.190.229.8:8888`
+- **协议支持**：HTTP/HTTPS
+- **无需认证**：开放访问，无需账号密码
+- **国内节点**：适合访问需要国内 IP 的网站
+- **使用限制**：带宽 1Mbps，建议并发数 5 以内
+
+支持多种编程语言和工具：
+
+| 工具/语言 | 使用方式 |
+|-----------|----------|
+| Python | `requests.get(url, proxies={"http": "http://115.190.229.8:8888"})` |
+| cURL | `curl -x http://115.190.229.8:8888 http://example.com` |
+| CMD | `set HTTP_PROXY=http://115.190.229.8:8888` |
+| PowerShell | `$env:HTTP_PROXY = "http://115.190.229.8:8888"` |
+| Node.js | 使用 `https-proxy-agent` 库 |
+| Java | 使用 `java.net.Proxy` 类 |
+| Go | 使用 `http.Transport` 配置代理 |
 
 ## 系统架构
 
@@ -602,7 +625,12 @@ loveFreeTools/
 │
 ├── workers.js                    # 旧版 Worker（KV 存储版本）
 ├── workers-download.js           # 文件下载代理 Worker
-└── wrangler.toml                 # Wrangler CLI 配置
+├── wrangler.toml                 # Wrangler CLI 配置
+│
+└── proxy-server/
+    ├── install-tinyproxy.sh      # TinyProxy 安装脚本
+    ├── test_proxy.py             # 代理测试脚本
+    └── README.md                 # 代理服务部署文档
 ```
 
 ## 技术栈
