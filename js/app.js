@@ -2012,16 +2012,24 @@ const App = {
      */
     showAdminKeyModal(domainName, callback) {
         const modal = document.getElementById('adminKeyModal');
-        const input = document.getElementById('adminKeyInput');
+        const inputOld = document.getElementById('adminKeyInput');
         const confirmBtn = document.getElementById('confirmAdminKeyBtn');
         const cancelBtn = document.getElementById('cancelAdminKeyBtn');
         const closeBtn = document.getElementById('closeAdminKeyModal');
         
-        if (!modal) return;
+        if (!modal) {
+            console.error('Admin key modal not found');
+            return;
+        }
+        
+        // 克隆 input 以清除旧事件监听器
+        const input = inputOld.cloneNode(true);
+        inputOld.parentNode.replaceChild(input, inputOld);
         
         input.value = '';
         modal.classList.add('active');
-        input.focus();
+        
+        const self = this;
         
         const closeModal = () => {
             modal.classList.remove('active');
@@ -2030,14 +2038,14 @@ const App = {
         const handleConfirm = () => {
             const adminKey = input.value.trim();
             if (!adminKey) {
-                this.showToast('error', '错误', '请输入管理员密钥');
+                self.showToast('error', '错误', '请输入管理员密钥');
                 return;
             }
             closeModal();
             callback(adminKey);
         };
         
-        // 清除旧事件监听器
+        // 克隆按钮以清除旧事件监听器
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         const newCancelBtn = cancelBtn.cloneNode(true);
@@ -2052,6 +2060,8 @@ const App = {
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleConfirm();
         });
+        
+        setTimeout(() => input.focus(), 100);
     },
     
     /**
