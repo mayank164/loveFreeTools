@@ -1507,6 +1507,24 @@ func main() {
                                 </select>
                             </div>
                         </div>
+                        
+                        <div class="dns-proxy-option">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="dnsProxied" checked>
+                                <span class="checkbox-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </span>
+                                <span class="checkbox-text">
+                                    <strong>启用 Cloudflare 代理</strong>
+                                    <small>提供 SSL 证书、隐藏真实 IP、DDoS 保护</small>
+                                </span>
+                            </label>
+                            <div class="proxy-status" id="proxyStatus">
+                                <span class="proxy-on">代理已开启</span>
+                            </div>
+                        </div>
 
                         <div class="dns-form-row" id="dnsPriorityRow" style="display: none;">
                             <div class="dns-form-group">

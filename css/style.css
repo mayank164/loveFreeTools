@@ -4768,6 +4768,108 @@ body::after {
     color: #f1f5f9;
 }
 
+/* DNS 代理选项 */
+.dns-proxy-option {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 245, 212, 0.05);
+    border: 1px solid rgba(0, 245, 212, 0.2);
+    border-radius: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-icon {
+    width: 22px;
+    height: 22px;
+    border: 2px solid rgba(0, 245, 212, 0.5);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.checkbox-icon svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: #0a0e17;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-icon {
+    background: #00f5d4;
+    border-color: #00f5d4;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-icon svg {
+    opacity: 1;
+}
+
+.checkbox-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.checkbox-text strong {
+    color: #f1f5f9;
+    font-size: 14px;
+}
+
+.checkbox-text small {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.proxy-status {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.proxy-on {
+    color: #f97316;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.proxy-on::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: #f97316;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.proxy-off {
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.proxy-off::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: #64748b;
+    border-radius: 50%;
+    display: inline-block;
+}
+
 .subdomain-url-input {
     width: 100%;
 }

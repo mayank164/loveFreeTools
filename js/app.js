@@ -621,6 +621,8 @@ const App = {
         const resultDetails = document.getElementById('resultDetails');
         const dnsValueLabel = document.getElementById('dnsValueLabel');
         const dnsValueHint = document.getElementById('dnsValueHint');
+        const dnsProxied = document.getElementById('dnsProxied');
+        const proxyStatus = document.getElementById('proxyStatus');
         
         // 记录类型配置
         const dnsTypeConfig = {
@@ -650,6 +652,19 @@ const App = {
                 }
             });
             
+            // 代理选项切换
+            if (dnsProxied && proxyStatus) {
+                const updateProxyStatus = () => {
+                    if (dnsProxied.checked) {
+                        proxyStatus.innerHTML = '<span class="proxy-on">代理已开启 (橙色云朵)</span>';
+                    } else {
+                        proxyStatus.innerHTML = '<span class="proxy-off">仅 DNS (灰色云朵)</span>';
+                    }
+                };
+                dnsProxied.addEventListener('change', updateProxyStatus);
+                updateProxyStatus();
+            }
+            
             // 记录类型切换
             if (dnsType) {
                 dnsType.addEventListener('change', () => {
@@ -659,6 +674,19 @@ const App = {
                     dnsValueLabel.textContent = config.label;
                     dnsValue.placeholder = config.placeholder;
                     dnsValueHint.textContent = config.hint;
+                    
+                    // 根据类型自动设置代理选项
+                    if (dnsProxied && proxyStatus) {
+                        const canProxy = ['A', 'AAAA', 'CNAME'].includes(type);
+                        dnsProxied.disabled = !canProxy;
+                        if (!canProxy) {
+                            dnsProxied.checked = false;
+                            proxyStatus.innerHTML = '<span class="proxy-off">此记录类型不支持代理</span>';
+                        } else {
+                            dnsProxied.checked = true;
+                            proxyStatus.innerHTML = '<span class="proxy-on">代理已开启 (橙色云朵)</span>';
+                        }
+                    }
                     
                     // 显示/隐藏优先级
                     if (config.showPriority) {
@@ -714,11 +742,13 @@ const App = {
             // 创建 DNS 记录
             createDnsBtn.addEventListener('click', async () => {
                 const subdomain = dnsSubdomain.value.toLowerCase().trim() || '@';
+                const domain = dnsDomain ? dnsDomain.value : 'lovefreetools.site';
                 const type = dnsType.value;
                 const value = dnsValue.value.trim();
                 const ttl = parseInt(dnsTtl.value) || 3600;
                 const priority = parseInt(dnsPriority.value) || 0;
                 const ownerEmail = dnsOwnerEmail ? dnsOwnerEmail.value.trim() : '';
+                const proxied = dnsProxied ? dnsProxied.checked : true;
                 
                 if (!value) {
                     this.showToast('error', '错误', '请输入记录值');
@@ -729,10 +759,10 @@ const App = {
                 createDnsBtn.innerHTML = '<span class="loading-spinner"></span> 创建中...';
                 
                 try {
-                    const resp = await fetch(`${API_BASE}/api/dns`, {
+                    const resp = await fetch(`${EmailAPI.API_BASE}/api/dns`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ subdomain, type, value, ttl, priority, ownerEmail })
+                        body: JSON.stringify({ subdomain, domain, type, value, ttl, priority, ownerEmail, proxied })
                     });
                     
                     const data = await resp.json();
