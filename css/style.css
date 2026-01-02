@@ -2604,6 +2604,21 @@ body::after {
     color: var(--primary);
 }
 
+.footer-link.github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-link.github-link .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.footer-link.github-link:hover {
+    color: #fff;
+}
+
 .footer-separator {
     color: var(--text-muted);
     font-size: 0.9rem;
