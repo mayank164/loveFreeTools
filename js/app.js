@@ -656,9 +656,9 @@ const App = {
             if (dnsProxied && proxyStatus) {
                 const updateProxyStatus = () => {
                     if (dnsProxied.checked) {
-                        proxyStatus.innerHTML = '<span class="proxy-on">代理已开启 (橙色云朵)</span>';
+                        proxyStatus.innerHTML = '<span class="proxy-on">代理已开启</span>';
                     } else {
-                        proxyStatus.innerHTML = '<span class="proxy-off">仅 DNS (灰色云朵)</span>';
+                        proxyStatus.innerHTML = '<span class="proxy-off">仅 DNS</span>';
                     }
                 };
                 dnsProxied.addEventListener('change', updateProxyStatus);
@@ -684,7 +684,7 @@ const App = {
                             proxyStatus.innerHTML = '<span class="proxy-off">此记录类型不支持代理</span>';
                         } else {
                             dnsProxied.checked = true;
-                            proxyStatus.innerHTML = '<span class="proxy-on">代理已开启 (橙色云朵)</span>';
+                            proxyStatus.innerHTML = '<span class="proxy-on">代理已开启</span>';
                         }
                     }
                     
@@ -724,7 +724,8 @@ const App = {
                     
                     checkTimer = setTimeout(async () => {
                         try {
-                            const resp = await fetch(`${API_BASE}/api/dns/check/${subdomain}`);
+                            const domain = dnsDomain ? dnsDomain.value : 'lovefreetools.site';
+                            const resp = await fetch(`${EmailAPI.API_BASE}/api/dns/check/${subdomain}?domain=${encodeURIComponent(domain)}`);
                             const data = await resp.json();
                             
                             if (data.available) {
