@@ -1,41 +1,26 @@
-# Dependencies
+# Node modules
 node_modules/
-server/node_modules/
 
-# Environment files
-.env
-.dev.vars
-server/.env
-
-# Logs
-*.log
-logs/
-
-# Build output
-dist/
+# Build outputs
+electron/
 release/
-electron/dist/
-android-app/android/
-android-app/ios/
-*.zip
-*.tar.gz
-*.exe
+dist/
 
 # IDE
 .idea/
 .vscode/
-*.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Wrangler
-.wrangler/
+# Logs
+*.log
 
-# Temporary files
+# Temp files
 *.tmp
 *.temp
-firewall-events-*.json
 
+# Environment
+.env
+.env.local
