@@ -5022,38 +5022,67 @@ body::after {
 
 /* 管理员密钥模态框 */
 .admin-key-modal {
-    max-width: 400px;
+    max-width: 420px;
+    background: linear-gradient(180deg, #1a2332 0%, #0f1419 100%);
+    border: 1px solid rgba(0, 245, 212, 0.2);
+}
+
+.admin-key-modal .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
 }
 
 .admin-key-desc {
     color: #94a3b8;
     margin-bottom: 20px;
+    font-size: 14px;
 }
 
 .admin-key-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     justify-content: flex-end;
-    margin-top: 20px;
+    margin-top: 25px;
 }
 
-.btn-danger {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-}
-
-.btn-danger:hover {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-}
-
-.btn-secondary {
-    background: rgba(100, 116, 139, 0.2);
+.admin-cancel-btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(100, 116, 139, 0.15);
     color: #94a3b8;
     border: 1px solid rgba(100, 116, 139, 0.3);
 }
 
-.btn-secondary:hover {
-    background: rgba(100, 116, 139, 0.3);
+.admin-cancel-btn:hover {
+    background: rgba(100, 116, 139, 0.25);
+    color: #f1f5f9;
+}
+
+.admin-confirm-btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.admin-confirm-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.admin-confirm-btn:active {
+    transform: translateY(0);
 }
 
 .subdomain-url-input {

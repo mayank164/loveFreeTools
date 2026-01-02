@@ -1651,17 +1651,17 @@ func main() {
         <div class="modal admin-key-modal">
             <div class="modal-header">
                 <h3 class="modal-title">管理员验证</h3>
-                <button class="modal-close" id="closeAdminKeyModal">&times;</button>
+                <button class="modal-close" onclick="document.getElementById('adminKeyModal').classList.remove('active')">&times;</button>
             </div>
             <div class="modal-content">
-                <p class="admin-key-desc">请输入管理员密钥以执行此操作</p>
+                <p class="admin-key-desc">请输入管理员密钥以删除域名</p>
                 <div class="form-group">
                     <label class="form-label">管理员密钥</label>
                     <input type="password" id="adminKeyInput" class="input" placeholder="输入管理员密钥">
                 </div>
                 <div class="admin-key-actions">
-                    <button class="btn btn-secondary" id="cancelAdminKeyBtn">取消</button>
-                    <button class="btn btn-danger" id="confirmAdminKeyBtn">确认删除</button>
+                    <button class="admin-cancel-btn" onclick="document.getElementById('adminKeyModal').classList.remove('active')">取消</button>
+                    <button class="admin-confirm-btn" id="confirmAdminKeyBtn">确认删除</button>
                 </div>
             </div>
         </div>

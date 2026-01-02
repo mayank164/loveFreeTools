@@ -2012,54 +2012,48 @@ const App = {
      */
     showAdminKeyModal(domainName, callback) {
         const modal = document.getElementById('adminKeyModal');
-        const inputOld = document.getElementById('adminKeyInput');
+        const input = document.getElementById('adminKeyInput');
         const confirmBtn = document.getElementById('confirmAdminKeyBtn');
-        const cancelBtn = document.getElementById('cancelAdminKeyBtn');
-        const closeBtn = document.getElementById('closeAdminKeyModal');
         
-        if (!modal) {
-            console.error('Admin key modal not found');
+        if (!modal || !input || !confirmBtn) {
+            console.error('Admin key modal elements not found');
+            // 降级为 prompt
+            const key = prompt('请输入管理员密钥：');
+            if (key) callback(key);
             return;
         }
-        
-        // 克隆 input 以清除旧事件监听器
-        const input = inputOld.cloneNode(true);
-        inputOld.parentNode.replaceChild(input, inputOld);
         
         input.value = '';
         modal.classList.add('active');
         
         const self = this;
         
-        const closeModal = () => {
-            modal.classList.remove('active');
-        };
+        // 保存回调到全局，以便按钮可以调用
+        window._adminKeyCallback = callback;
+        window._adminKeyModal = modal;
+        window._adminKeyInput = input;
+        window._adminKeyShowToast = (type, title, msg) => self.showToast(type, title, msg);
         
-        const handleConfirm = () => {
-            const adminKey = input.value.trim();
-            if (!adminKey) {
-                self.showToast('error', '错误', '请输入管理员密钥');
-                return;
-            }
-            closeModal();
-            callback(adminKey);
-        };
-        
-        // 克隆按钮以清除旧事件监听器
+        // 移除旧的事件监听器并添加新的
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        const newCloseBtn = closeBtn.cloneNode(true);
-        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
         
-        newConfirmBtn.addEventListener('click', handleConfirm);
-        newCancelBtn.addEventListener('click', closeModal);
-        newCloseBtn.addEventListener('click', closeModal);
+        newConfirmBtn.onclick = function() {
+            const adminKey = window._adminKeyInput.value.trim();
+            if (!adminKey) {
+                window._adminKeyShowToast('error', '错误', '请输入管理员密钥');
+                return;
+            }
+            window._adminKeyModal.classList.remove('active');
+            window._adminKeyCallback(adminKey);
+        };
         
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleConfirm();
-        });
+        // Enter 键提交
+        input.onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                newConfirmBtn.onclick();
+            }
+        };
         
         setTimeout(() => input.focus(), 100);
     },
