@@ -2017,7 +2017,6 @@ const App = {
         
         if (!modal || !input || !confirmBtn) {
             console.error('Admin key modal elements not found');
-            // 降级为 prompt
             const key = prompt('请输入管理员密钥：');
             if (key) callback(key);
             return;
@@ -2028,31 +2027,27 @@ const App = {
         
         const self = this;
         
-        // 保存回调到全局，以便按钮可以调用
-        window._adminKeyCallback = callback;
-        window._adminKeyModal = modal;
-        window._adminKeyInput = input;
-        window._adminKeyShowToast = (type, title, msg) => self.showToast(type, title, msg);
-        
-        // 移除旧的事件监听器并添加新的
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        
-        newConfirmBtn.onclick = function() {
-            const adminKey = window._adminKeyInput.value.trim();
+        const doConfirm = () => {
+            // 每次点击时重新获取 input 值
+            const currentInput = document.getElementById('adminKeyInput');
+            const adminKey = currentInput ? currentInput.value.trim() : '';
+            
             if (!adminKey) {
-                window._adminKeyShowToast('error', '错误', '请输入管理员密钥');
+                self.showToast('error', '错误', '请输入管理员密钥');
                 return;
             }
-            window._adminKeyModal.classList.remove('active');
-            window._adminKeyCallback(adminKey);
+            modal.classList.remove('active');
+            callback(adminKey);
         };
         
+        // 移除旧按钮，创建新按钮
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        newConfirmBtn.onclick = doConfirm;
+        
         // Enter 键提交
-        input.onkeypress = function(e) {
-            if (e.key === 'Enter') {
-                newConfirmBtn.onclick();
-            }
+        input.onkeypress = (e) => {
+            if (e.key === 'Enter') doConfirm();
         };
         
         setTimeout(() => input.focus(), 100);
