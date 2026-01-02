@@ -2011,46 +2011,14 @@ const App = {
      * 显示管理员密钥模态框
      */
     showAdminKeyModal(domainName, callback) {
-        const modal = document.getElementById('adminKeyModal');
-        const input = document.getElementById('adminKeyInput');
-        const confirmBtn = document.getElementById('confirmAdminKeyBtn');
-        
-        if (!modal || !input || !confirmBtn) {
-            console.error('Admin key modal elements not found');
+        // 使用全局函数
+        if (typeof window.showAdminKeyModal === 'function') {
+            window.showAdminKeyModal(callback);
+        } else {
+            // 降级为 prompt
             const key = prompt('请输入管理员密钥：');
             if (key) callback(key);
-            return;
         }
-        
-        input.value = '';
-        modal.classList.add('active');
-        
-        const self = this;
-        
-        const doConfirm = () => {
-            // 每次点击时重新获取 input 值
-            const currentInput = document.getElementById('adminKeyInput');
-            const adminKey = currentInput ? currentInput.value.trim() : '';
-            
-            if (!adminKey) {
-                self.showToast('error', '错误', '请输入管理员密钥');
-                return;
-            }
-            modal.classList.remove('active');
-            callback(adminKey);
-        };
-        
-        // 移除旧按钮，创建新按钮
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        newConfirmBtn.onclick = doConfirm;
-        
-        // Enter 键提交
-        input.onkeypress = (e) => {
-            if (e.key === 'Enter') doConfirm();
-        };
-        
-        setTimeout(() => input.focus(), 100);
     },
     
     /**
